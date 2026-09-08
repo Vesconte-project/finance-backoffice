@@ -1,5 +1,17 @@
 # Agent Runbook
 
+## Company OS precedence
+
+Before acting, read `franciscoabadesantos/company-os/AGENTS.md`. Company-level operating rules there govern this repository. If this repository conflicts with Company OS, stop and report the conflict rather than guessing or silently choosing the local rule.
+
+Truth boundaries:
+- Notion = Narrative / specs / rationale.
+- Airtable V1 = governance, Snapshots, and authoritative AcceptanceEvents.
+- Linear = work coordination only.
+- GitHub = implementation, code, PRs, CI, and immutable technical evidence.
+
+GitHub state, a merge, CI, deployment, or Linear status never creates or proves Acceptance.
+
 This project is a Clerk-protected Next.js backoffice. For local debugging, agents may bypass Clerk only in development.
 
 ## Local Browser Debugging
