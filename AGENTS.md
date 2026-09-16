@@ -2,7 +2,16 @@
 
 ## Company OS precedence
 
-Before acting, read `Vesconte-project/company-os/AGENTS.md`. Company-level operating rules there govern this repository. If this repository conflicts with Company OS, stop and report the conflict rather than guessing or silently choosing the local rule.
+Before acting, retrieve and read the Company OS rules at the immutable bootstrap
+revision through authenticated GitHub access:
+
+`https://github.com/Vesconte-project/company-os/blob/d3f34bb4c885b409659f8a6bf261ed9234aee41e/AGENTS.md`
+
+This is a remote repository reference, not a path inside this checkout. Use the
+GitHub API or an authenticated GitHub tool to read that exact file and revision. If it
+cannot be retrieved, stop and report the access blocker. Company-level operating rules
+there govern this repository. If this repository conflicts with Company OS, stop and
+report the conflict rather than guessing or silently choosing the local rule.
 
 Truth boundaries:
 - Notion = Narrative / specs / rationale.
@@ -16,8 +25,10 @@ GitHub state, a merge, CI, deployment, or Linear status never creates or proves 
 
 Before implementation discovered through Linear, resolve the exact canonical
 continuation-root UUID and open the canonical `work-preflight-request/v1` issue in
-`Vesconte-project/company-os`. Follow the complete remote transport contract in
-`company-os/docs/work-preflight-transport.md`.
+`Vesconte-project/company-os`. Retrieve the exact remote transport contract through authenticated GitHub access
+from:
+
+`https://github.com/Vesconte-project/company-os/blob/d3f34bb4c885b409659f8a6bf261ed9234aee41e/docs/work-preflight-transport.md`
 
 Proceed only after verifying the exact request issue, the `github-actions[bot]`
 response, the successful matching Company OS workflow run, and the semantically
