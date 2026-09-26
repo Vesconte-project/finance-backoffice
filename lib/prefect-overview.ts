@@ -2,7 +2,7 @@ import { BackendProxyError, requestBackendJson } from './backend-client'
 import { asRecord } from './payload'
 
 export const PREFECT_OVERVIEW_PATH = '/admin/ops/prefect/overview'
-export const PREFECT_FALLBACK_UI_URL = 'https://prefect.longbrunch.com'
+export const PREFECT_FALLBACK_UI_URL = 'https://prefect.vesconte.com'
 
 export type PrefectWorkPool = {
   name: string
