@@ -157,3 +157,49 @@ Recommended Vercel production environment variables:
 - `CF_ACCESS_CLIENT_SECRET`
 
 Do not set `ADMIN_AUTH_BYPASS` in production. It is only for local `next dev`, and the app ignores it when `NODE_ENV=production`.
+
+## Backend administrative JWT migration
+
+`BACKOFFICE_AUTH_MODE=legacy` is the default during rollout. In that mode the
+existing email allowlist and server credentials retain their behavior. Set
+`BACKOFFICE_AUTH_MODE=clerk_jwt` only against a Backend containing migration
+`007_administrative_rbac`, with `PLATFORM_API_ENABLED=true` and
+`PLATFORM_ADMIN_ENABLED=true`.
+
+In JWT mode Clerk provides session identity. `GET /v1/admin/me` verifies an
+explicit, current PostgreSQL administrative grant before the backoffice renders
+protected workspaces. Every Backend request uses the user's session JWT and the
+native `/v1/admin` alias, with exact operation RBAC enforced by FastAPI.
+Organization administrators do not receive platform administration. The email
+allowlist, Clerk metadata, local bypass, shared secret and service token do not
+grant native access. Unknown modes and unavailable authorization fail closed.
+
+Configuration names: `BACKOFFICE_AUTH_MODE`, `BACKEND_BASE_URL`,
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`. Use matching Clerk and
+Backend environments; the backoffice's exact origin must be authorized by the
+Backend's JWT configuration. Local example: `http://localhost:3101`, with the
+Backend at `http://127.0.0.1:18095`. Never expose the Clerk secret key to the browser.
+The `finance-infra/platform-local` profile provisions the administrative migration;
+add the optional exact backoffice origin to its private input before starting it.
+
+Create/revoke administrative grants only through the controlled Backend tool
+documented in `finance-backend/docs/PLATFORM_ADMINISTRATIVE_RBAC.md`. No user HTTP
+endpoint grants global rights. Roles require explicit operation permissions,
+an audit reason, and expiry. No administrator identity is hardcoded here.
+
+JWT requests omit cookies and legacy credentials, disable redirects and caching,
+and retry a 401 once with a fresh default session token. Backend errors are
+sanitized; native responses never fall back to service authentication. The
+diagnostics health probe checks administrative identity in native mode.
+
+Do not change Cloudflare or deploy from this work. Existing Cloudflare Access
+policies must be reviewed by the operator before native traffic is enabled
+outside local development. Keep legacy credentials until local, staging and
+preview validation and rollback have been reviewed. Email display remains identity
+information; it is not an authorization decision.
+
+Tests now compile into repository-local ignored `.test-build/` rather than a
+fixed `/tmp` location. Unit tests cover JWT-only headers, one refresh, invalid
+modes, traversal rejection and mutation forwarding. Lint and production build
+have also been exercised locally. A real administrative login/grant/revoke
+proof remains required before cutover.

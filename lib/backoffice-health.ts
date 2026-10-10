@@ -4,6 +4,7 @@ import {
   requestBackendJson,
 } from '@/lib/backend-client'
 import { isRegistryUnavailablePayload } from '@/lib/registry-backend'
+import { nativeAdminEnabled } from '@/lib/native-admin-client'
 
 export type HealthState = 'reachable' | 'unreachable' | 'missing' | 'configured'
 
@@ -41,8 +42,8 @@ export async function loadBackofficeHealth(adminEmail: string): Promise<Backoffi
 
   const routeChecks = await Promise.all([
     probeBackendRoute({
-      label: 'Backend /health',
-      path: '/health',
+      label: nativeAdminEnabled() ? 'Backend administrative identity' : 'Backend /health',
+      path: nativeAdminEnabled() ? '/me' : '/health',
       includeCloudflareAccess: true,
       requireBackendServiceToken: false,
     }),
