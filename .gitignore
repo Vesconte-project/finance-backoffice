@@ -4,6 +4,8 @@ node_modules
 !.env.example
 npm-debug.log*
 tsconfig.tsbuildinfo
+/.test-build/
+/.next-platform/
 
 # clerk configuration (can include secrets)
 /.clerk/

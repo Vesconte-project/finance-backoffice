@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { mapAuthErrorStatus, requireAdminUser } from './admin-auth'
 import { JsonResponseParseError, readJsonResponse } from './http-json'
+import { nativeAdminEnabled, nativeAdminRequest } from './native-admin-client'
 
 type ProxyBackendJsonOptions = {
   path: string
@@ -125,6 +126,15 @@ export async function requestBackendJson({
   requireBackendServiceToken = false,
   includeCloudflareAccess = true,
 }: ProxyBackendJsonOptions): Promise<{ payload: unknown; upstream: Response }> {
+  if (nativeAdminEnabled()) {
+    const { auth } = await import('@clerk/nextjs/server')
+    const session = await auth()
+    const upstream = await nativeAdminRequest({ baseUrl: backendBaseUrl(), path, method, searchParams, body,
+      getToken: options => session.getToken(options?.skipCache ? { expiresInSeconds: 60 } : undefined) })
+    // Native errors never include response previews, provider bodies or secrets.
+    const payload = await readJsonResponse(upstream)
+    return { payload, upstream }
+  }
   const url = new URL(`${backendBaseUrl()}${path}`)
   if (searchParams) {
     for (const [key, value] of searchParams.entries()) {
@@ -189,7 +199,7 @@ export async function requestBackendJson({
 
 export async function proxyBackendJson(options: ProxyBackendJsonOptions): Promise<NextResponse> {
   const { payload, upstream } = await requestBackendJson(options)
-  return NextResponse.json(payload, { status: upstream.status })
+  return NextResponse.json(payload, { status: upstream.status, headers: { 'Cache-Control': 'private, no-store' } })
 }
 
 export async function proxyCanonicalTickerResource({
