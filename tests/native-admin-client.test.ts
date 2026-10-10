@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { nativeAdminEnabled, nativeAdminRequest, NativeAdminError } from '../lib/native-admin-client'
+import { localAdminBypassEnabled, nativeAdminEnabled, nativeAdminRequest, NativeAdminError } from '../lib/native-admin-client'
 
 test('native administration sends only session identity to the native alias', async () => {
   let tokens = 0
@@ -12,6 +12,26 @@ test('native administration sends only session identity to the native alias', as
       return new Response('{}')
     } })
   assert.equal(tokens, 1)
+})
+
+test('local bypass is limited to legacy development and cannot weaken native or unknown modes', () => {
+  const names = ['NODE_ENV', 'BACKOFFICE_AUTH_MODE', 'ADMIN_AUTH_BYPASS'] as const
+  const previous = Object.fromEntries(names.map(name => [name, process.env[name]]))
+  try {
+    Object.assign(process.env, { NODE_ENV: 'development', BACKOFFICE_AUTH_MODE: 'legacy', ADMIN_AUTH_BYPASS: 'true' })
+    assert.equal(localAdminBypassEnabled(), true)
+    process.env.BACKOFFICE_AUTH_MODE = 'clerk_jwt'
+    assert.equal(localAdminBypassEnabled(), false)
+    process.env.BACKOFFICE_AUTH_MODE = 'unknown'
+    assert.throws(localAdminBypassEnabled, NativeAdminError)
+    Object.assign(process.env, { NODE_ENV: 'production', BACKOFFICE_AUTH_MODE: 'legacy' })
+    assert.equal(localAdminBypassEnabled(), false)
+  } finally {
+    for (const name of names) {
+      if (previous[name] === undefined) Reflect.deleteProperty(process.env, name)
+      else Object.assign(process.env, { [name]: previous[name] })
+    }
+  }
 })
 
 test('401 refreshes exactly once and never falls back to a privileged credential', async () => {

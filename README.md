@@ -203,3 +203,25 @@ fixed `/tmp` location. Unit tests cover JWT-only headers, one refresh, invalid
 modes, traversal rejection and mutation forwarding. Lint and production build
 have also been exercised locally. A real administrative login/grant/revoke
 proof remains required before cutover.
+
+### Local native browser validation
+
+Start the isolated stack from the sibling frontoffice with `npm run dev:platform`.
+Its private inputs must authorize `http://localhost:3101`. In this checkout run
+`npm run dev:platform` to open the backoffice at that exact loopback origin.
+The launcher uses the sibling frontoffice's Clerk Development keys, verifies they
+match the stack, and disables the legacy allowlist and bypass. It does not write
+environment files or grant administrative access. Use the audited internal CLI
+for a temporary, least-privilege grant.
+
+For the automated real-session check, stop manually started Next.js processes
+and run in `finance-frontoffice`:
+
+```sh
+PLATFORM_BACKOFFICE_QA=true npm run qa:platform -- --grep 'expiring explicit administrative grant'
+```
+
+Playwright owns both local Next.js servers. It verifies denial before the grant,
+the granted interface and live contract, denial of an unrelated operation, and
+denial after revocation. Grants expire and are revoked by the test; only its own
+Development identities are removed. No screenshots, traces or videos store tokens.

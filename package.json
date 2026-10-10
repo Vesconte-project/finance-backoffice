@@ -11,7 +11,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "tsc --module commonjs --target ES2022 --moduleResolution node --outDir .test-build --esModuleInterop --skipLibCheck --types node tests/native-admin-client.test.ts tests/ticker-readiness.test.ts tests/relationship-map-onboarding.test.ts tests/prefect-overview.test.ts tests/relationship-map-source-health-ui.test.ts tests/entity-layer-proxy.test.ts tests/backend-contract.test.ts lib/ticker-readiness.ts lib/relationship-map-onboarding.ts lib/payload.ts lib/prefect-overview.ts lib/prefect-labels.ts lib/backend-client.ts lib/backend-contract.ts lib/http-json.ts lib/admin-auth.ts && NODE_PATH=./node_modules node --test .test-build/tests/native-admin-client.test.js .test-build/tests/ticker-readiness.test.js .test-build/tests/relationship-map-onboarding.test.js .test-build/tests/prefect-overview.test.js .test-build/tests/relationship-map-source-health-ui.test.js .test-build/tests/entity-layer-proxy.test.js .test-build/tests/backend-contract.test.js",
-    "test:backend-contract": "node scripts/verify-backend-proxy-contract.mjs"
+    "test:backend-contract": "node scripts/verify-backend-proxy-contract.mjs",
+    "dev:platform": "node scripts/dev-platform.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.0.11",

@@ -14,6 +14,10 @@ export function nativeAdminEnabled() {
   throw new NativeAdminError(503)
 }
 
+export function localAdminBypassEnabled() {
+  return !nativeAdminEnabled() && process.env.NODE_ENV !== 'production' && process.env.ADMIN_AUTH_BYPASS === 'true'
+}
+
 export async function nativeAdminRequest({ baseUrl, path, method = 'GET', searchParams, body, getToken, fetcher = fetch }: Options) {
   let url: URL
   try {

@@ -1,5 +1,5 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
-import { nativeAdminEnabled, nativeAdminRequest, NativeAdminError } from './native-admin-client'
+import { localAdminBypassEnabled, nativeAdminEnabled, nativeAdminRequest, NativeAdminError } from './native-admin-client'
 
 type AdminContext = {
   userId: string
@@ -17,9 +17,7 @@ function parseAllowlist(): Set<string> {
 }
 
 export function isAdminAuthBypassEnabled(): boolean {
-  if (nativeAdminEnabled()) return false
-  // Local automation/debugging only. Production must always go through Clerk.
-  return process.env.NODE_ENV !== 'production' && process.env.ADMIN_AUTH_BYPASS === 'true'
+  return localAdminBypassEnabled()
 }
 
 export async function requireAdminUser(): Promise<AdminContext> {
