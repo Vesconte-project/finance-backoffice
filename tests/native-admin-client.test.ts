@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { nativeAdminRequest, nativeAdminJson, NativeAdminError } from '../lib/native-admin-client'
+import { nativeAdminRequest, nativeAdminJson, NativeAdminError, backendRoutePath } from '../lib/native-admin-client'
 
 test('native administration sends only session identity to the native alias', async () => {
   let tokens = 0
@@ -37,7 +37,7 @@ test('path traversal, webhooks and synthetic user APIs cannot receive an adminis
 })
 
 test('mutation bodies and search parameters survive without service headers', async () => {
-  await nativeAdminRequest({ baseUrl: 'https://api.example.com', path: '/analyst/jobs', method: 'POST',
+  await nativeAdminRequest({ baseUrl: 'https://api.example.com', path: '/analyst/data-ops/rebuild-jobs', method: 'POST',
     body: { fixture: 'ACME' }, searchParams: new URLSearchParams({ limit: '1' }), getToken: async () => 'fixture',
     fetcher: async (url, options) => {
       assert.equal(new URL(String(url)).search, '?limit=1')
@@ -76,4 +76,44 @@ test('rate refusals retain a bounded Retry-After without response details', asyn
     getToken: async () => 'synthetic-session', fetcher: async () => new Response('private', {
       status: 429, headers: { 'Retry-After': '60' } }) }),
     (error: unknown) => error instanceof NativeAdminError && error.status === 429 && error.retryAfter === '60')
+})
+
+test('Access transports a server request but never replaces a missing session', async () => {
+  const savedId=process.env.CF_ACCESS_CLIENT_ID, savedSecret=process.env.CF_ACCESS_CLIENT_SECRET
+  process.env.CF_ACCESS_CLIENT_ID='synthetic-access-id'
+  process.env.CF_ACCESS_CLIENT_SECRET='synthetic-access-secret'
+  let calls=0
+  try {
+    await nativeAdminRequest({ baseUrl:'https://backend.example.test', path:'/me', getToken:async ()=>'synthetic-session',
+      fetcher:async (_url, options) => {
+        calls++
+        const headers=new Headers(options?.headers)
+        assert.equal(headers.get('authorization'), 'Bearer synthetic-session')
+        assert.equal(headers.get('CF-Access-Client-Id'), 'synthetic-access-id')
+        assert.equal(headers.get('CF-Access-Client-Secret'), 'synthetic-access-secret')
+        assert.equal(headers.get('x-backend-shared-secret'), null)
+        return new Response('{}')
+      } })
+    await assert.rejects(nativeAdminRequest({ baseUrl:'https://backend.example.test',path:'/me',getToken:async ()=>null,
+      fetcher:async ()=>{ calls++;return new Response('{}') } }),
+      (error:unknown)=>error instanceof NativeAdminError && error.status===401)
+    assert.equal(calls,1)
+    delete process.env.CF_ACCESS_CLIENT_SECRET
+    await assert.rejects(nativeAdminRequest({ baseUrl:'https://backend.example.test',path:'/me',getToken:async ()=>'synthetic-session',
+      fetcher:async ()=>{ calls++;return new Response('{}') } }),
+      (error:unknown)=>error instanceof NativeAdminError && error.status===503)
+    assert.equal(calls,1)
+  } finally {
+    if(savedId===undefined) delete process.env.CF_ACCESS_CLIENT_ID; else process.env.CF_ACCESS_CLIENT_ID=savedId
+    if(savedSecret===undefined) delete process.env.CF_ACCESS_CLIENT_SECRET; else process.env.CF_ACCESS_CLIENT_SECRET=savedSecret
+  }
+})
+
+
+test('market reads use /v1 while administrative mutations and health use /v1/admin', () => {
+  for (const path of ['/tickers/SYNTH/profile','/tickers/SYNTH/ohlc','/signals/cross-sectional','/network/atlas','/relationships/SYNTH'])
+    assert.equal(backendRoutePath(path), '/v1'+path)
+  for (const path of ['/tickers/status','/relationship-map/source-health','/analyst/data-ops/inventory'])
+    assert.equal(backendRoutePath(path), '/v1/admin'+path)
+  assert.equal(backendRoutePath('/tickers/request','POST'),'/v1/admin/tickers/request')
 })

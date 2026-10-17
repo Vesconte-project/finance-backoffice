@@ -62,7 +62,7 @@ export async function loadBackofficeHealth(adminActor: string): Promise<Backoffi
       baseUrlConfigured: backendConfigured,
       message: backendConfigured
         ? backendHealthProbe.message
-        : 'BACKEND_BASE_URL or FINANCE_BACKEND_URL is not configured.',
+        : 'BACKEND_BASE_URL is not configured.',
     },
     registryApi: {
       status: registryProbe.status,

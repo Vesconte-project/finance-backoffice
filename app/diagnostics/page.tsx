@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { BackofficeHealthPanel } from '@/app/components/backoffice-health-panel'
 import { requireAdminUser } from '@/lib/admin-auth'
 import { loadBackofficeHealth } from '@/lib/backoffice-health'
@@ -7,7 +6,6 @@ const RAW_ROUTE_GUIDE = [
   '/api/research/capabilities',
   '/api/data-ops/health',
   '/api/data-ops/rebuild-jobs',
-  '/api/analyst/jobs',
 ]
 
 export default async function DiagnosticsPage() {
@@ -24,12 +22,6 @@ export default async function DiagnosticsPage() {
       </div>
 
       <div className="feature-grid">
-        <div className="card compact-card">
-          <h3>Analyst Smoke Tests</h3>
-          <p className="small">Validates backend analyst job creation and structured result rendering. It is not the main research pipeline.</p>
-          <Link href="/analyst" className="text-link">Open analyst smoke tests</Link>
-        </div>
-
         <div className="card compact-card">
           <h3>Raw API / Debug Tools</h3>
           <p className="small">These routes stay behind admin auth and now return JSON diagnostics instead of crashing on HTML error pages.</p>

@@ -154,3 +154,16 @@ um recurso concreto será tratado no passo de administração, com motivo e audi
 Os PRs #9/#10 estão integrados. O corte funciona com /v1 desligado: estas vistas
 mostram indisponibilidade e não recorrem ao service token para aceder aos dados
 pessoais. Não ativa a plataforma nem altera credenciais. O Francisco faz o merge.
+
+## Corte integral e produção
+
+Os BFFs só chamam `/v1` com JWT Clerk e RBAC atual, mais credenciais Access
+do servidor quando a origem as exige. Não há alias FINANCE_BACKEND_URL, allowlist
+ou service token. O mapa usa os contratos nativos com sessão; o painel mostra
+score/rank publicados em produção, sem converter score em direção. Proxies
+direcionais e leituras administrativas privadas gerais foram apagados. Candidatos
+e readiness ficam indisponíveis até existir owner/submissão no registry.
+
+O inventário de chamadas está em `finance-infra/docs/eng196/consumidores.csv`.
+O manifesto `finance-infra/docs/eng196/ATIVACAO.md` controla a promoção Production,
+a remoção final das variáveis e o rollback. Nenhuma execução no servidor neste PR.

@@ -7,7 +7,7 @@ export async function requireAdminUser(): Promise<AdminContext> {
   const session = await auth()
   if (!session.userId) throw new NativeAdminError(401)
   const response = await nativeAdminRequest({
-    baseUrl: process.env.BACKEND_BASE_URL || process.env.FINANCE_BACKEND_URL || '',
+    baseUrl: process.env.BACKEND_BASE_URL || '',
     path: '/me',
     getToken: options => session.getToken(options?.skipCache ? { expiresInSeconds: 60 } : undefined),
   })

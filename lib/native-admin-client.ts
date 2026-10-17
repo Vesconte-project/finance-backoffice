@@ -9,6 +9,16 @@ export class NativeAdminError extends Error {
       'Administrative service is unavailable.')
   }
 }
+// Closed read contracts shared with the frontoffice; administrative mutations
+// keep their canonical /v1/admin paths and the backend still decides all access.
+export function backendRoutePath(path: string, method = 'GET'): string {
+  const marketRead = method === 'GET' && (
+    /^\/tickers\/[^/]+\/(?:ohlc|history|technical-series|profile|summary|readings|scorecard|events|disclosures|earnings-events(?:\/latest)?|corporate-actions|filings|investor-events|guidance|equity-capital-events|fund-distributions|financial-statements|market-metrics)$/.test(path) ||
+    path === '/tickers/index' || path === '/signals/cross-sectional' || path === '/screener/rankings' ||
+    path === '/calendar' || /^\/network(?:\/atlas|\/communities\/[^/]+|\/neighborhoods\/[^/]+)?$/.test(path) || /^\/relationships\/[^/]+$/.test(path))
+  return `/v1${marketRead ? '' : '/admin'}${path}`
+}
+
 export async function nativeAdminRequest({ baseUrl, path, method = 'GET', searchParams, body, getToken, fetcher = fetch }: Options) {
   let url: URL
   try {
@@ -18,15 +28,24 @@ export async function nativeAdminRequest({ baseUrl, path, method = 'GET', search
     const decoded = decodeURIComponent(path)
     if (decoded.includes('\\') || decoded.includes('?') || decoded.includes('#') ||
       /(?:^|\/)\.{1,2}(?:\/|$)/.test(decoded) || /%2f|%5c/i.test(path) ||
-      !(['/me', '/contracts', '/fund-rebalances', '/resource-access'].includes(path) || /^\/(?:analyst|tickers|signals|screener|relationships|entities|data-control|ops)\//.test(path) || /^\/network(?:\/|$)/.test(path)) ||
+      !(['/me', '/contracts', '/fund-rebalances', '/resource-access'].includes(path) || /^\/(?:analyst|tickers|signals|screener|relationships|relationship-map|entities|data-control|ops)\//.test(path) || /^\/network(?:\/|$)/.test(path)) ||
       path.startsWith('/site/research/synthetic')) throw Error()
-    url = new URL(`${base.origin}/v1/admin${path}`)
+    url = new URL(`${base.origin}${backendRoutePath(path,method)}`)
     if (searchParams) for (const [key, value] of searchParams) url.searchParams.append(key, value)
   } catch { throw new NativeAdminError(503) }
   for (let attempt = 0; attempt < 2; attempt++) {
     const token = await getToken(attempt ? { skipCache: true } : undefined)
     if (!token) throw new NativeAdminError(401)
     const headers: Record<string, string> = { Authorization: `Bearer ${token}` }
+    // Access only transports this server-side request through the origin gate.
+    // API permissions continue to depend exclusively on Clerk JWT + backend RBAC.
+    const accessId = process.env.CF_ACCESS_CLIENT_ID?.trim()
+    const accessSecret = process.env.CF_ACCESS_CLIENT_SECRET?.trim()
+    if (Boolean(accessId) !== Boolean(accessSecret)) throw new NativeAdminError(503)
+    if (accessId && accessSecret) {
+      headers['CF-Access-Client-Id'] = accessId
+      headers['CF-Access-Client-Secret'] = accessSecret
+    }
     if (body !== undefined) headers['Content-Type'] = 'application/json'
     let response: Response
     try {

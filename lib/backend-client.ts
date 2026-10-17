@@ -35,7 +35,7 @@ export class BackendProxyError extends Error {
 }
 
 export function backendBaseUrl(): string {
-  const base = (process.env.BACKEND_BASE_URL || process.env.FINANCE_BACKEND_URL || '').trim()
+  const base = (process.env.BACKEND_BASE_URL || '').trim()
   if (!base) {
     throw new Error('BACKEND_BASE_URL_MISSING')
   }
@@ -43,7 +43,7 @@ export function backendBaseUrl(): string {
 }
 
 export function backendBaseUrlConfigured(): boolean {
-  return Boolean((process.env.BACKEND_BASE_URL || process.env.FINANCE_BACKEND_URL || '').trim())
+  return Boolean((process.env.BACKEND_BASE_URL || '').trim())
 }
 
 export async function requestBackendJson({ path, method = 'GET', searchParams, body }: ProxyBackendJsonOptions): Promise<{ payload: unknown; upstream: Response }> {
