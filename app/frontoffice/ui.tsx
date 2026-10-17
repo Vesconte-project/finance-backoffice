@@ -20,11 +20,6 @@ const RUN_COLUMNS = [
   { key: 'completedAt', label: 'Completed At', keys: ['completedAt', 'completed_at'] },
 ]
 
-const SUBSCRIPTION_COLUMNS = [
-  { key: 'ticker', label: 'Ticker' },
-  { key: 'userId', label: 'User ID', keys: ['userId', 'user_id'] },
-]
-
 const MISSING_ADMIN_CONTRACTS = [
   'no admin all-users research run list',
   'no user search/list',
@@ -36,42 +31,17 @@ const MISSING_ADMIN_CONTRACTS = [
 ]
 
 export default function FrontofficeWorkspace({ adminEmail }: { adminEmail: string }) {
-  const [allTickers, setAllTickers] = useState<string[]>([])
-  const [subscriptions, setSubscriptions] = useState<unknown[]>([])
   const [userId, setUserId] = useState('')
   const [ticker, setTicker] = useState('')
   const [runId, setRunId] = useState('')
   const [userWatchlist, setUserWatchlist] = useState<string[]>([])
   const [runs, setRuns] = useState<unknown[]>([])
   const [runDetail, setRunDetail] = useState<unknown | null>(null)
-  const [activityError, setActivityError] = useState<string | null>(null)
   const [lookupError, setLookupError] = useState<string | null>(null)
   const [detailError, setDetailError] = useState<string | null>(null)
-  const [activityLoading, setActivityLoading] = useState(false)
   const [lookupLoading, setLookupLoading] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'ai' | 'user'>(() => initialFrontofficeTab())
-
-  async function loadWatchlistActivity() {
-    setActivityLoading(true)
-    setActivityError(null)
-    try {
-      const allPayload = await requestClientJson('/api/frontoffice/watchlist/all-tickers')
-      const tickers = readArrayPayload(allPayload, 'tickers').map((value) => String(value).trim().toUpperCase()).filter(Boolean)
-      setAllTickers([...new Set(tickers)])
-
-      if (tickers.length > 0) {
-        const subscriptionsPayload = await requestClientJson(`/api/frontoffice/watchlist/subscriptions?tickers=${encodeURIComponent([...new Set(tickers)].join(','))}`)
-        setSubscriptions(readArrayPayload(subscriptionsPayload, 'subscriptions'))
-      } else {
-        setSubscriptions([])
-      }
-    } catch (err) {
-      setActivityError(readApiError(err, 'Failed to load frontoffice watchlist activity.'))
-    } finally {
-      setActivityLoading(false)
-    }
-  }
 
   async function loadUserLookup() {
     const normalizedUserId = userId.trim()
@@ -122,13 +92,6 @@ export default function FrontofficeWorkspace({ adminEmail }: { adminEmail: strin
   }
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadWatchlistActivity()
-    }, 0)
-    return () => window.clearTimeout(timer)
-  }, [])
-
-  useEffect(() => {
     function syncHashTab() {
       setActiveTab(window.location.hash === '#user-models' ? 'user' : 'ai')
     }
@@ -174,38 +137,6 @@ export default function FrontofficeWorkspace({ adminEmail }: { adminEmail: strin
         </div>
       ) : (
         <>
-      <div className="card">
-        <div className="split-row">
-          <div>
-            <h2>Watchlist activity</h2>
-            <p className="small">Backend: GET /site/watchlist/all-tickers and GET /site/watchlist/subscriptions.</p>
-          </div>
-          <button className="secondary" type="button" onClick={loadWatchlistActivity} disabled={activityLoading}>
-            {activityLoading ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
-        <ApiErrorBox error={activityError} />
-        {allTickers.length > 0 ? (
-          <div className="meta">
-            {allTickers.map((item) => (
-              <span className="badge queued" key={item}>{item}</span>
-            ))}
-          </div>
-        ) : (
-          <EvidenceGap reason="No watched tickers were returned by the current backend contract." expected="Rows from /site/watchlist/all-tickers." title="Watchlist activity unavailable" />
-        )}
-      </div>
-
-      <div className="card">
-        <h2>Watchlist Subscriptions</h2>
-        <p className="small">Shows subscription rows returned by the backend. If user counts are needed, the backend should expose an admin summary contract.</p>
-        {subscriptions.length > 0 ? (
-          <DynamicTable rows={subscriptions} columns={SUBSCRIPTION_COLUMNS} />
-        ) : (
-          <EvidenceGap reason="No subscription rows were returned for the watched ticker set." expected="Rows from /site/watchlist/subscriptions." title="Subscription evidence unavailable" />
-        )}
-      </div>
-
       <form className="card" onSubmit={onUserSubmit}>
         <h2>User Lookup</h2>
         <p className="small">Existing backend contracts require user_id for user-specific watchlist and AI research run visibility.</p>

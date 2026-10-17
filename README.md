@@ -225,3 +225,16 @@ Playwright owns both local Next.js servers. It verifies denial before the grant,
 the granted interface and live contract, denial of an unrelated operation, and
 denial after revocation. Grants expire and are revoked by the test; only its own
 Development identities are removed. No screenshots, traces or videos store tokens.
+
+## Corte das leituras agregadas de watchlists (ENG-196)
+
+Foram removidos os proxies `/api/frontoffice/watchlist/all-tickers` e
+`/api/frontoffice/watchlist/subscriptions` e os painéis que os consumiam. As rotas
+backend equivalentes e os espelhos `/v1/admin` são apagados no mesmo passo, sem
+fallback ou substituição administrativa em lote. O backoffice não recebe a
+identidade do job de alertas nem contactos dos seus destinatários.
+
+Efeito em produção após merge: estes dois painéis deixam de existir e os proxies
+retiram-se (404). As restantes rotas pessoais/admin são tratadas nos passos
+seguintes. Não há alteração de MFA, RBAC, allowlist, credenciais ou configuração
+de produção neste PR. O trabalho completo ENG-207 integra o passo de administração.
