@@ -28,7 +28,7 @@ export default async function HomePage() {
   await requireAdminUser()
   const today = new Date().toISOString().slice(0, 10)
   const thirtyDaysAgo = shiftIsoDays(-30)
-  const [health, dataHealth, experiments, candidates, signalHistory, watchlists, jobs, rebuildJobs, activePointers] = await Promise.allSettled([
+  const [health, dataHealth, experiments, candidates, signalHistory, jobs, rebuildJobs, activePointers] = await Promise.allSettled([
     fetchWithTimeout({ path: '/health', includeCloudflareAccess: true }, 'backend health'),
     fetchWithTimeout({
       path: '/analyst/data-ops/health',
@@ -54,11 +54,6 @@ export default async function HomePage() {
       includeCloudflareAccess: true,
     }, 'signal history'),
     fetchWithTimeout({
-      path: '/site/watchlist',
-      searchParams: new URLSearchParams({ limit: '20' }),
-      includeCloudflareAccess: true,
-    }, 'watchlists'),
-    fetchWithTimeout({
       path: '/analyst/jobs',
       searchParams: new URLSearchParams({ limit: '80' }),
       includeCloudflareAccess: true,
@@ -83,7 +78,6 @@ export default async function HomePage() {
   const experimentRows = itemsOf(payloadOf(experiments), ['experiments', 'items', 'results'])
   const candidateRows = itemsOf(payloadOf(candidates), ['candidates', 'items', 'results'])
   const signalRows = itemsOf(payloadOf(signalHistory), ['history', 'signals', 'items', 'results'])
-  const watchlistRows = itemsOf(payloadOf(watchlists), ['watchlists', 'items', 'results'])
   const jobRows = itemsOf(payloadOf(jobs), ['jobs', 'items', 'results'])
   const rebuildRows = itemsOf(payloadOf(rebuildJobs), ['jobs', 'items', 'results'])
   const pointerRows = itemsOf(payloadOf(activePointers), ['active_pointers', 'pointers', 'items', 'results'])
@@ -143,7 +137,6 @@ export default async function HomePage() {
         <section className="card">
           <div className="split-row">
             <h2>Live feed</h2>
-            <span className="small">{watchlistRows.length ? `${watchlistRows.length} watchlist rows reachable` : 'watchlist unavailable or empty'}</span>
           </div>
           {feed.length ? (
             <div className="feed-list">
