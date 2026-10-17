@@ -4,5 +4,5 @@ import { requireAdminUser } from '@/lib/admin-auth'
 export default async function EntityLayerPage() {
   const admin = await requireAdminUser()
 
-  return <EntityLayerWorkspace adminEmail={admin.email} />
+  return <EntityLayerWorkspace adminActor={admin.userId} />
 }

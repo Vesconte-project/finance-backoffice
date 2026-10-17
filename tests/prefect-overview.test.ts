@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { nativeAdminJson, NativeAdminError } from '../lib/native-admin-client'
 import {
   loadPrefectOverview,
   normalizePrefectOverview,
@@ -14,16 +15,12 @@ import {
 } from '../lib/prefect-labels'
 
 test('prefect overview client loads normal response with backend links', async () => {
-  const originalBaseUrl = process.env.BACKEND_BASE_URL
-  const originalToken = process.env.BACKEND_SERVICE_TOKEN
   const originalFetch = globalThis.fetch
 
-  process.env.BACKEND_BASE_URL = 'http://backend.local'
-  process.env.BACKEND_SERVICE_TOKEN = 'service-token'
   globalThis.fetch = async (input, init) => {
-    assert.equal(String(input), `http://backend.local${PREFECT_OVERVIEW_PATH}`)
+    assert.equal(String(input), `http://127.0.0.1:18095/v1/admin${PREFECT_OVERVIEW_PATH}`)
     assert.equal(init?.method, 'GET')
-    assert.equal(new Headers(init?.headers).get('Authorization'), 'Bearer service-token')
+    assert.equal(new Headers(init?.headers).get('Authorization'), 'Bearer session-fixture')
     return new Response(JSON.stringify({
       uiUrl: 'https://prefect.vesconte.com',
       errors: [],
@@ -62,7 +59,7 @@ test('prefect overview client loads normal response with backend links', async (
   }
 
   try {
-    const overview = await loadPrefectOverview()
+    const overview = await loadPrefectOverview(options => nativeAdminJson({ ...options, baseUrl: 'http://127.0.0.1:18095', getToken: async () => 'session-fixture' }))
     assert.equal(overview.uiUrl, 'https://prefect.vesconte.com')
     assert.equal(overview.workPools[0].name, 'finance-feature-store')
     assert.equal(overview.deploymentCount, 11)
@@ -70,8 +67,6 @@ test('prefect overview client loads normal response with backend links', async (
     assert.equal(overview.deployments[0].url, 'https://prefect.vesconte.com/deployments/deployment-id-from-backend')
     assert.equal(overview.scheduledRuns[0].url, 'https://prefect.vesconte.com/flow-runs/run-id-from-backend')
   } finally {
-    process.env.BACKEND_BASE_URL = originalBaseUrl
-    process.env.BACKEND_SERVICE_TOKEN = originalToken
     globalThis.fetch = originalFetch
   }
 })
@@ -93,42 +88,30 @@ test('prefect overview preserves non-blocking backend errors', () => {
 })
 
 test('prefect overview client rejects unavailable endpoint', async () => {
-  const originalBaseUrl = process.env.BACKEND_BASE_URL
-  const originalToken = process.env.BACKEND_SERVICE_TOKEN
   const originalFetch = globalThis.fetch
 
-  process.env.BACKEND_BASE_URL = 'http://backend.local'
-  process.env.BACKEND_SERVICE_TOKEN = 'service-token'
   globalThis.fetch = async () => {
     throw new Error('connection refused')
   }
 
   try {
-    await assert.rejects(() => loadPrefectOverview(), /Failed to reach backend: connection refused/)
+    await assert.rejects(() => loadPrefectOverview(options => nativeAdminJson({ ...options, baseUrl: 'http://127.0.0.1:18095', getToken: async () => 'session-fixture' })), NativeAdminError)
   } finally {
-    process.env.BACKEND_BASE_URL = originalBaseUrl
-    process.env.BACKEND_SERVICE_TOKEN = originalToken
     globalThis.fetch = originalFetch
   }
 })
 
 test('prefect overview client rejects non-ok JSON response', async () => {
-  const originalBaseUrl = process.env.BACKEND_BASE_URL
-  const originalToken = process.env.BACKEND_SERVICE_TOKEN
   const originalFetch = globalThis.fetch
 
-  process.env.BACKEND_BASE_URL = 'http://backend.local'
-  process.env.BACKEND_SERVICE_TOKEN = 'service-token'
   globalThis.fetch = async () => new Response(JSON.stringify({ message: 'overview disabled' }), {
     status: 503,
     headers: { 'Content-Type': 'application/json' },
   })
 
   try {
-    await assert.rejects(() => loadPrefectOverview(), /overview disabled/)
+    await assert.rejects(() => loadPrefectOverview(options => nativeAdminJson({ ...options, baseUrl: 'http://127.0.0.1:18095', getToken: async () => 'session-fixture' })), NativeAdminError)
   } finally {
-    process.env.BACKEND_BASE_URL = originalBaseUrl
-    process.env.BACKEND_SERVICE_TOKEN = originalToken
     globalThis.fetch = originalFetch
   }
 })

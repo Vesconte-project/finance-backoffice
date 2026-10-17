@@ -1,5 +1,3 @@
 import { redirect } from 'next/navigation'
 
-export default async function RegistryPage() {
-  redirect('/evaluation')
-}
+export default function RegistryPage() { redirect('/production') }

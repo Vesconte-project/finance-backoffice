@@ -16,7 +16,7 @@ export function BackofficeHealthPanel({ snapshot }: { snapshot: BackofficeHealth
           <p className="small">Configuration and reachability checks for the backend, registry, and protected control-plane routes.</p>
         </div>
         <div className="small">
-          <div>Admin: {snapshot.adminEmail}</div>
+          <div>Admin: {snapshot.adminActor}</div>
           <div>Last check: {new Date(snapshot.checkedAt).toLocaleString()}</div>
         </div>
       </div>
@@ -26,7 +26,7 @@ export function BackofficeHealthPanel({ snapshot }: { snapshot: BackofficeHealth
           label="Backend API"
           status={snapshot.backendApi.status}
           body={snapshot.backendApi.message}
-          footnote={`Base URL: ${snapshot.backendApi.baseUrlConfigured ? 'yes' : 'no'} · Service token: ${snapshot.backendApi.serviceTokenConfigured ? 'yes' : 'no'}`}
+          footnote={`Base URL: ${snapshot.backendApi.baseUrlConfigured ? 'yes' : 'no'} · Session JWT + backend RBAC`}
         />
         <StatusCard
           label="Registry API"
@@ -38,7 +38,7 @@ export function BackofficeHealthPanel({ snapshot }: { snapshot: BackofficeHealth
           label="Clerk / Admin"
           status="configured"
           body="Authenticated admin session is active."
-          footnote={snapshot.adminEmail}
+          footnote={snapshot.adminActor}
         />
       </div>
 

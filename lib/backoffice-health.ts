@@ -1,10 +1,7 @@
 import {
   backendBaseUrlConfigured,
-  backendServiceTokenConfigured,
   requestBackendJson,
 } from '@/lib/backend-client'
-import { isRegistryUnavailablePayload } from '@/lib/registry-backend'
-import { nativeAdminEnabled } from '@/lib/native-admin-client'
 
 export type HealthState = 'reachable' | 'unreachable' | 'missing' | 'configured'
 
@@ -19,12 +16,11 @@ export type RouteProbe = {
 
 export type BackofficeHealthSnapshot = {
   checkedAt: string
-  adminEmail: string
+  adminActor: string
   backendApi: {
     status: HealthState
     configured: boolean
     baseUrlConfigured: boolean
-    serviceTokenConfigured: boolean
     message: string
   }
   registryApi: {
@@ -35,46 +31,35 @@ export type BackofficeHealthSnapshot = {
   routeChecks: RouteProbe[]
 }
 
-export async function loadBackofficeHealth(adminEmail: string): Promise<BackofficeHealthSnapshot> {
+export async function loadBackofficeHealth(adminActor: string): Promise<BackofficeHealthSnapshot> {
   const checkedAt = new Date().toISOString()
   const backendConfigured = backendBaseUrlConfigured()
-  const serviceTokenConfigured = backendServiceTokenConfigured()
 
   const routeChecks = await Promise.all([
     probeBackendRoute({
-      label: nativeAdminEnabled() ? 'Backend administrative identity' : 'Backend /health',
-      path: nativeAdminEnabled() ? '/me' : '/health',
-      includeCloudflareAccess: true,
-      requireBackendServiceToken: false,
-    }),
-    probeBackendRoute({
-      label: 'Research experiment list',
-      path: '/analyst/research/experiments',
-      searchParams: new URLSearchParams({ limit: '1' }),
-      includeCloudflareAccess: true,
-      requireBackendServiceToken: true,
+      label: 'Backend administrative identity',
+      path: '/me',
+
     }),
     probeBackendRoute({
       label: 'Data quality health',
       path: '/analyst/data-ops/health',
       searchParams: new URLSearchParams({ domains: 'market', end_date: checkedAt.slice(0, 10) }),
-      includeCloudflareAccess: true,
-      requireBackendServiceToken: true,
+
     }),
     probeRegistryRoute(),
   ])
 
   const backendHealthProbe = routeChecks[0]
-  const registryProbe = routeChecks[3]
+  const registryProbe = routeChecks[2]
 
   return {
     checkedAt,
-    adminEmail,
+    adminActor,
     backendApi: {
       status: backendConfigured ? backendHealthProbe.status : 'missing',
       configured: backendConfigured,
       baseUrlConfigured: backendConfigured,
-      serviceTokenConfigured,
       message: backendConfigured
         ? backendHealthProbe.message
         : 'BACKEND_BASE_URL or FINANCE_BACKEND_URL is not configured.',
@@ -92,14 +77,12 @@ async function probeBackendRoute({
   label,
   path,
   searchParams,
-  requireBackendServiceToken,
-  includeCloudflareAccess,
+
 }: {
   label: string
   path: string
   searchParams?: URLSearchParams
-  requireBackendServiceToken: boolean
-  includeCloudflareAccess: boolean
+
 }): Promise<RouteProbe> {
   if (!backendBaseUrlConfigured()) {
     return missingProbe(label, path, 'Backend base URL is missing.')
@@ -110,8 +93,7 @@ async function probeBackendRoute({
       path,
       method: 'GET',
       searchParams,
-      requireBackendServiceToken,
-      includeCloudflareAccess,
+
     })
     return {
       label,
@@ -135,22 +117,21 @@ async function probeBackendRoute({
 
 async function probeRegistryRoute(): Promise<RouteProbe> {
   if (!backendBaseUrlConfigured()) {
-    return missingProbe('Registry proxy', '/analyst/registry/promotion-events', 'Backend base URL is missing.')
+    return missingProbe('Registry proxy', '/analyst/registry/active-pointers', 'Backend base URL is missing.')
   }
 
   try {
     const { payload, upstream } = await requestBackendJson({
-      path: '/analyst/registry/promotion-events',
+      path: '/analyst/registry/active-pointers',
       method: 'GET',
-      searchParams: new URLSearchParams({ limit: '1' }),
-      requireBackendServiceToken: true,
-      includeCloudflareAccess: true,
+      searchParams: new URLSearchParams({ environment: 'production' }),
+
     })
-    if (isRegistryUnavailablePayload(payload)) {
+    if (!payload || typeof payload !== 'object') {
       return {
         label: 'Registry proxy',
         method: 'GET',
-        path: '/analyst/registry/promotion-events',
+        path: '/analyst/registry/active-pointers',
         status: 'missing',
         httpStatus: upstream.status,
         message: 'Registry evidence is not available through finance-backend yet.',
@@ -160,7 +141,7 @@ async function probeRegistryRoute(): Promise<RouteProbe> {
     return {
       label: 'Registry proxy',
       method: 'GET',
-      path: '/analyst/registry/promotion-events',
+      path: '/analyst/registry/active-pointers',
       status: upstream.ok ? 'reachable' : 'unreachable',
       httpStatus: upstream.status,
       message: upstream.ok ? 'Reachable.' : `Responded with HTTP ${upstream.status}.`,
@@ -169,7 +150,7 @@ async function probeRegistryRoute(): Promise<RouteProbe> {
     return {
       label: 'Registry proxy',
       method: 'GET',
-      path: '/analyst/registry/promotion-events',
+      path: '/analyst/registry/active-pointers',
       status: 'unreachable',
       message: error instanceof Error ? error.message : 'Registry probe failed.',
     }

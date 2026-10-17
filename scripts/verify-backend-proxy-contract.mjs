@@ -66,7 +66,7 @@ async function collectProxyTargets(directory) {
 }
 
 function extractProxyTargets(source, sourcePath) {
-  const calls = [...source.matchAll(/proxy(?:Research)?BackendJson\s*\(\s*\{/g)]
+  const calls = [...source.matchAll(/(?:proxyBackendJson|requestBackendResponse)\s*\(\s*\{/g)]
   const canonicalCalls = [...source.matchAll(/proxyCanonicalTickerResource\s*\(\s*\{[\s\S]*?resource:\s*'([^']+)'[\s\S]*?\}\s*\)/g)]
   const actionValues = [...source.matchAll(/type\s+ResearchAdminAction\s*=\s*([^\n]+)/g)]
     .flatMap((match) => [...match[1].matchAll(/'([^']+)'/g)].map((value) => value[1]))
@@ -75,7 +75,7 @@ function extractProxyTargets(source, sourcePath) {
   for (const match of canonicalCalls) {
     targets.push({
       method: 'GET',
-      path: `/tickers/{}/${match[1]}`,
+      path: `/v1/admin/tickers/{}/${match[1]}`,
       source: sourcePath.replace(`${repositoryRoot}/`, ''),
     })
   }
@@ -101,7 +101,7 @@ function extractProxyTargets(source, sourcePath) {
     for (const path of expandedPaths) {
       targets.push({
         method: methodMatch[1],
-        path: normalizePath(path),
+        path: normalizePath('/v1/admin'+path),
         source: sourcePath.replace(`${repositoryRoot}/`, ''),
       })
     }

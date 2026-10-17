@@ -4,7 +4,7 @@ import { requireAdminUser } from '@/lib/admin-auth'
 import { loadBackofficeHealth } from '@/lib/backoffice-health'
 
 const RAW_ROUTE_GUIDE = [
-  '/api/research/experiments',
+  '/api/research/capabilities',
   '/api/data-ops/health',
   '/api/data-ops/rebuild-jobs',
   '/api/analyst/jobs',
@@ -12,7 +12,7 @@ const RAW_ROUTE_GUIDE = [
 
 export default async function DiagnosticsPage() {
   const admin = await requireAdminUser()
-  const health = await loadBackofficeHealth(admin.email)
+  const health = await loadBackofficeHealth(admin.userId)
 
   return (
     <div className="page-stack">

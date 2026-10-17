@@ -15,5 +15,5 @@ export default async function OperationsPage() {
     loadError = payload.message
   }
 
-  return <OperationsWorkspace adminEmail={admin.email} overview={overview} loadError={loadError} />
+  return <OperationsWorkspace adminActor={admin.userId} overview={overview} loadError={loadError} />
 }

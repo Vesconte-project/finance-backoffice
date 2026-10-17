@@ -3,5 +3,5 @@ import { FinancialStatementsWorkspace } from '@/components/financial-statements/
 
 export default async function FinancialStatementsPage() {
   const admin = await requireAdminUser()
-  return <FinancialStatementsWorkspace adminEmail={admin.email} />
+  return <FinancialStatementsWorkspace adminActor={admin.userId} />
 }

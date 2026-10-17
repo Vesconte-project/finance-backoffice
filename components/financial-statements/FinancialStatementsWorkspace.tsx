@@ -5,7 +5,7 @@ import { requestClientJson } from '@/lib/client-json'
 import { asRecord, firstList, type RowRecord } from '@/lib/payload'
 
 type Props = {
-  adminEmail: string
+  adminActor: string
 }
 
 type StatementRow = {
@@ -32,7 +32,7 @@ type StatementResponse = {
   rows: StatementRow[]
 }
 
-export function FinancialStatementsWorkspace({ adminEmail }: Props) {
+export function FinancialStatementsWorkspace({ adminActor }: Props) {
   const [symbol, setSymbol] = useState('AAPL')
   const [statementType, setStatementType] = useState('')
   const [periodType, setPeriodType] = useState('')
@@ -86,7 +86,7 @@ export function FinancialStatementsWorkspace({ adminEmail }: Props) {
             <h1>Financial Statements</h1>
             <p className="small">Canonical temporal line items. Known at is the source-cache observation date, not an official filing date.</p>
           </div>
-          <div className="small">Admin: {adminEmail}</div>
+          <div className="small">Admin: {adminActor}</div>
         </div>
 
         <form className="entity-layer-query" onSubmit={submit}>

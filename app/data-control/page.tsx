@@ -3,5 +3,5 @@ import { requireAdminUser } from '@/lib/admin-auth'
 
 export default async function DataControlPage() {
   const admin = await requireAdminUser()
-  return <DataControlWorkspace adminEmail={admin.email} />
+  return <DataControlWorkspace adminActor={admin.userId} />
 }

@@ -3,5 +3,5 @@ import { EarningsEventsWorkspace } from '@/components/earnings-events/EarningsEv
 
 export default async function EarningsEventsPage() {
   const admin = await requireAdminUser()
-  return <EarningsEventsWorkspace adminEmail={admin.email} />
+  return <EarningsEventsWorkspace adminActor={admin.userId} />
 }

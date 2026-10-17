@@ -3,5 +3,5 @@ import { MarketMetricsWorkspace } from '@/components/market-metrics/MarketMetric
 
 export default async function MarketMetricsPage() {
   const admin = await requireAdminUser()
-  return <MarketMetricsWorkspace adminEmail={admin.email} />
+  return <MarketMetricsWorkspace adminActor={admin.userId} />
 }

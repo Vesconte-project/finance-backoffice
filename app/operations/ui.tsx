@@ -8,12 +8,12 @@ import {
 } from '@/lib/prefect-labels'
 
 type OperationsWorkspaceProps = {
-  adminEmail: string
+  adminActor: string
   overview?: PrefectOverview
   loadError?: string
 }
 
-export default function OperationsWorkspace({ adminEmail, overview, loadError }: OperationsWorkspaceProps) {
+export default function OperationsWorkspace({ adminActor, overview, loadError }: OperationsWorkspaceProps) {
   const uiUrl = overview?.uiUrl || PREFECT_FALLBACK_UI_URL
 
   return (
@@ -22,7 +22,7 @@ export default function OperationsWorkspace({ adminEmail, overview, loadError }:
         <div>
           <p className="eyebrow">Operations</p>
           <h1>Prefect overview</h1>
-          <p className="small">Admin: {adminEmail}</p>
+          <p className="small">Admin: {adminActor}</p>
         </div>
         <a className="hero-link operations-primary-link" href={uiUrl} rel="noreferrer" target="_blank">
           Open Prefect UI

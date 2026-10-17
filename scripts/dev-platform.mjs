@@ -23,9 +23,7 @@ if (!publishable.startsWith('pk_test_') || !secret.startsWith('sk_test_') ||
   throw Error('Use matching Clerk Development inputs with the exact localhost:3101 origin')
 const port = process.env.FINANCE_BACKEND_PORT || '18095'
 if (!/^\d{4,5}$/.test(port) || Number(port) > 65535) throw Error('Invalid local Backend port')
-const env = { ...process.env, NODE_ENV: 'development', BACKOFFICE_AUTH_MODE: 'clerk_jwt',
-  ADMIN_AUTH_BYPASS: 'false', ADMIN_EMAIL_ALLOWLIST: '', BACKEND_SERVICE_TOKEN: '',
-  BACKEND_SHARED_SECRET: '', CF_ACCESS_CLIENT_ID: '', CF_ACCESS_CLIENT_SECRET: '',
+const env = { ...process.env, NODE_ENV: 'development',
   BACKEND_BASE_URL: `http://127.0.0.1:${port}`, FINANCE_BACKEND_URL: '',
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: publishable, CLERK_SECRET_KEY: secret,
   NEXT_PUBLIC_CLERK_SIGN_IN_URL: '/sign-in', NEXT_PUBLIC_CLERK_SIGN_UP_URL: '/sign-up',

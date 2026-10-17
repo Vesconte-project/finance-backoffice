@@ -3,7 +3,7 @@ import { proxyBackendJson, withAdminRoute } from '@/lib/backend-client'
 
 export async function GET(request: NextRequest) {
   return withAdminRoute(async () => proxyBackendJson({
-    path: '/admin/data-control/calendar',
+    path: '/data-control/calendar',
     method: 'GET',
     searchParams: request.nextUrl.searchParams,
   }))

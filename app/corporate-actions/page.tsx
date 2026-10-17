@@ -3,5 +3,5 @@ import { CorporateActionsWorkspace } from '@/components/corporate-actions/Corpor
 
 export default async function CorporateActionsPage() {
   const admin = await requireAdminUser()
-  return <CorporateActionsWorkspace adminEmail={admin.email} />
+  return <CorporateActionsWorkspace adminActor={admin.userId} />
 }

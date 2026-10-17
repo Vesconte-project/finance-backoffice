@@ -1,37 +1,17 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { localAdminBypassEnabled, nativeAdminEnabled, nativeAdminRequest, NativeAdminError } from '../lib/native-admin-client'
+import { nativeAdminRequest, nativeAdminJson, NativeAdminError } from '../lib/native-admin-client'
 
 test('native administration sends only session identity to the native alias', async () => {
   let tokens = 0
-  await nativeAdminRequest({ baseUrl: 'http://127.0.0.1:18095', path: '/admin/contracts',
+  await nativeAdminRequest({ baseUrl: 'http://127.0.0.1:18095', path: '/contracts',
     getToken: async () => { tokens++; return 'session-fixture' }, fetcher: async (url, options) => {
-      assert.equal(String(url), 'http://127.0.0.1:18095/v1/admin/admin/contracts')
+      assert.equal(String(url), 'http://127.0.0.1:18095/v1/admin/contracts')
       assert.deepEqual(options?.headers, { Authorization: 'Bearer session-fixture' })
       assert.equal(options?.credentials, 'omit'); assert.equal(options?.cache, 'no-store'); assert.equal(options?.redirect, 'error')
       return new Response('{}')
     } })
   assert.equal(tokens, 1)
-})
-
-test('local bypass is limited to legacy development and cannot weaken native or unknown modes', () => {
-  const names = ['NODE_ENV', 'BACKOFFICE_AUTH_MODE', 'ADMIN_AUTH_BYPASS'] as const
-  const previous = Object.fromEntries(names.map(name => [name, process.env[name]]))
-  try {
-    Object.assign(process.env, { NODE_ENV: 'development', BACKOFFICE_AUTH_MODE: 'legacy', ADMIN_AUTH_BYPASS: 'true' })
-    assert.equal(localAdminBypassEnabled(), true)
-    process.env.BACKOFFICE_AUTH_MODE = 'clerk_jwt'
-    assert.equal(localAdminBypassEnabled(), false)
-    process.env.BACKOFFICE_AUTH_MODE = 'unknown'
-    assert.throws(localAdminBypassEnabled, NativeAdminError)
-    Object.assign(process.env, { NODE_ENV: 'production', BACKOFFICE_AUTH_MODE: 'legacy' })
-    assert.equal(localAdminBypassEnabled(), false)
-  } finally {
-    for (const name of names) {
-      if (previous[name] === undefined) Reflect.deleteProperty(process.env, name)
-      else Object.assign(process.env, { [name]: previous[name] })
-    }
-  }
 })
 
 test('401 refreshes exactly once and never falls back to a privileged credential', async () => {
@@ -45,16 +25,7 @@ test('401 refreshes exactly once and never falls back to a privileged credential
   assert.deepEqual(options, [undefined, { skipCache: true }])
 })
 
-test('unknown mode and nonlocal plaintext API fail closed', async () => {
-  const previous = process.env.BACKOFFICE_AUTH_MODE
-  try {
-    delete process.env.BACKOFFICE_AUTH_MODE; assert.equal(nativeAdminEnabled(), false)
-    process.env.BACKOFFICE_AUTH_MODE = 'clerk_jwt'; assert.equal(nativeAdminEnabled(), true)
-    process.env.BACKOFFICE_AUTH_MODE = 'mistyped'; assert.throws(nativeAdminEnabled, NativeAdminError)
-  } finally {
-    if (previous === undefined) delete process.env.BACKOFFICE_AUTH_MODE
-    else process.env.BACKOFFICE_AUTH_MODE = previous
-  }
+test('nonlocal plaintext API fails closed', async () => {
   await assert.rejects(nativeAdminRequest({ baseUrl: 'http://api.example.com', path: '/me', getToken: async () => 'fixture' }), NativeAdminError)
 })
 
@@ -74,4 +45,35 @@ test('mutation bodies and search parameters survive without service headers', as
       assert.equal(options?.body, '{"fixture":"ACME"}')
       return new Response('{}')
     } })
+})
+
+test('missing session never makes a backend request even with legacy environment present', async () => {
+  const previous = process.env.BACKEND_SERVICE_TOKEN
+  process.env.BACKEND_SERVICE_TOKEN = 'synthetic-unused-service-token'
+  let requests = 0
+  try {
+    await assert.rejects(nativeAdminRequest({ baseUrl: 'https://api.example.com', path: '/me',
+      getToken: async () => null, fetcher: async () => { requests++; return new Response('{}') } }),
+      (error: unknown) => error instanceof NativeAdminError && error.status === 401)
+    assert.equal(requests, 0)
+  } finally {
+    if (previous === undefined) delete process.env.BACKEND_SERVICE_TOKEN
+    else process.env.BACKEND_SERVICE_TOKEN = previous
+  }
+})
+
+test('backend refusals and malformed JSON never expose an upstream body', async () => {
+  for (const status of [200, 401, 403, 429, 503]) {
+    await assert.rejects(nativeAdminJson({ baseUrl: 'https://api.example.com', path: '/me',
+      getToken: async () => 'synthetic-session', fetcher: async () =>
+        new Response('private-credential-never-echo', { status, headers: { 'Content-Type': 'application/json' } }) }),
+      (error: unknown) => error instanceof NativeAdminError && !error.message.includes('private-credential'))
+  }
+})
+
+test('rate refusals retain a bounded Retry-After without response details', async () => {
+  await assert.rejects(nativeAdminRequest({ baseUrl: 'https://api.example.com', path: '/me',
+    getToken: async () => 'synthetic-session', fetcher: async () => new Response('private', {
+      status: 429, headers: { 'Retry-After': '60' } }) }),
+    (error: unknown) => error instanceof NativeAdminError && error.status === 429 && error.retryAfter === '60')
 })

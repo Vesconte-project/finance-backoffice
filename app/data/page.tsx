@@ -12,7 +12,7 @@ export default async function DataPage({ searchParams }: PageProps) {
 
   return (
     <DataWorkspace
-      adminEmail={admin.email}
+      adminActor={admin.userId}
       initialDomain={resolvedSearchParams?.domain}
       initialEntity={resolvedSearchParams?.entity}
       initialMonth={month}

@@ -94,13 +94,13 @@ export function Sidebar({ health, candidateCount, loadStatus = false }: Props) {
     {
       label: 'RESEARCH',
       items: [
-        { label: 'Launch & Runs', href: '/research', dot: sidebarHealth.research },
+        { label: 'Exceptional access', href: '/research', dot: sidebarHealth.research },
       ],
     },
     {
       label: 'EVALUATION',
       items: [
-        { label: 'Evaluation', href: '/evaluation', dot: sidebarHealth.evaluation, badge: sidebarCandidateCount },
+        { label: 'Evaluation', href: '/production', dot: sidebarHealth.evaluation, badge: sidebarCandidateCount },
       ],
     },
     {

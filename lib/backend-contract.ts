@@ -23,8 +23,8 @@ export type BackendContract = {
 
 export async function fetchBackendContract(): Promise<BackendContract> {
   const { payload } = await requestBackendJson({
-    path: '/admin/contracts',
-    requireBackendServiceToken: true,
+    path: '/contracts',
+
   })
   return parseBackendContract(payload)
 }
