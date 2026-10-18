@@ -3,5 +3,5 @@ import FrontofficeWorkspace from './ui'
 
 export default async function FrontofficePage() {
   const admin = await requireAdminUser()
-  return <FrontofficeWorkspace adminEmail={admin.email} />
+  return <FrontofficeWorkspace adminActor={admin.userId} />
 }

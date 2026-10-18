@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { requestClientJson } from '@/lib/client-json'
 import { asRecord, firstList, type RowRecord } from '@/lib/payload'
 
-type Props = { adminEmail: string }
+type Props = { adminActor: string }
 type CapitalEvent = {
   eventId: string
   symbol: string | null
@@ -49,7 +49,7 @@ type CapitalEvent = {
 }
 type CapitalResponse = { available: boolean | null; reason: string | null; symbol: string | null; count: number; rows: CapitalEvent[] }
 
-export function EquityCapitalEventsWorkspace({ adminEmail }: Props) {
+export function EquityCapitalEventsWorkspace({ adminActor }: Props) {
   const [symbol, setSymbol] = useState('ASML')
   const [eventType, setEventType] = useState('')
   const [sourceDocumentType, setSourceDocumentType] = useState('')
@@ -86,7 +86,7 @@ export function EquityCapitalEventsWorkspace({ adminEmail }: Props) {
 
   return <div className="page-stack">
     <section className="card">
-      <div className="split-row"><div><p className="eyebrow">Analyst workspace</p><h1>Equity Capital Events</h1><p className="small">Temporal PIT canonical candidates. Known at is the observation date, not confirmation of a capital event.</p></div><div className="small">Admin: {adminEmail}</div></div>
+      <div className="split-row"><div><p className="eyebrow">Analyst workspace</p><h1>Equity Capital Events</h1><p className="small">Temporal PIT canonical candidates. Known at is the observation date, not confirmation of a capital event.</p></div><div className="small">Admin: {adminActor}</div></div>
       <form className="entity-layer-query" onSubmit={submit}>
         <div><label htmlFor="capital-symbol">Symbol</label><input id="capital-symbol" onChange={(event) => setSymbol(event.target.value)} value={symbol} /></div>
         <div><label htmlFor="capital-type">Event type</label><input id="capital-type" onChange={(event) => setEventType(event.target.value)} placeholder="shelf_registration" value={eventType} /></div>

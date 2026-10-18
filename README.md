@@ -2,20 +2,11 @@
 
 Admin-only operational console (separate app) for analyst and data-ops workflows.
 
-## Features
+## Funcionalidades
 
-- Clerk-authenticated access
-- Email allowlist admin authorization (`ADMIN_EMAIL_ALLOWLIST`)
-- Analyst job creation (`ticker_snapshot`, `coverage_report`, `ticker_signal_v1`)
-- Research experiment launch and inspection backed by `finance-backend` (`/research`)
-- Job status polling and persisted result rendering
-- Recent jobs history with failed-job retry
-- Data inventory and entity-level coverage inspection (`/data`)
-- Data Ops health calendar (`/data-ops`)
-- Targeted rebuild/refill job submission + retry history
-- Macro series upsert and release-calendar row upsert job forms
-- Read-only registry / evidence inspection backed by `finance-backend` registry proxy routes (`/registry`)
-- Live backend API contract inventory (`/contracts`)
+Sessões Clerk e RBAC administrativo atual no backend protegem a consola de
+inventário, reparação de dados, contratos e operações de produção. O acesso a
+research privado faz-se por exceção auditada a um recurso concreto.
 
 ## Environment
 
@@ -23,81 +14,30 @@ Copy `.env.example` to `.env.local` and set:
 
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
 - `CLERK_SECRET_KEY`
-- `ADMIN_EMAIL_ALLOWLIST` (comma-separated, lowercase email list)
 - `BACKEND_BASE_URL`
-- `BACKEND_SERVICE_TOKEN` (required for authenticated backend research/admin calls)
-- `CF_ACCESS_CLIENT_ID` (optional for local localhost dev, required when `finance-backend` is behind Cloudflare Access)
-- `CF_ACCESS_CLIENT_SECRET` (optional for local localhost dev, required when `finance-backend` is behind Cloudflare Access)
 
-## Boundaries
+## Contratos e privacidade
 
-- `/research` launches and inspects orchestrated research experiments through `finance-backend`.
-- `/registry` remains read-only inspection through `finance-backend` registry façade routes.
-- Backoffice does not execute feature engineering, ML training, strategy construction, backtests, or orchestrator logic.
-- Backoffice does not directly access backend Supabase tables, registry DB tables, or other internal databases.
+Os pedidos ao backend usam JWT de sessão e caminhos `/v1/admin/*`. As páginas de
+dados usam `/v1/admin/tickers/{ticker}/...`, os inventários
+`/v1/admin/data-control/*` e as operações `/v1/admin/ops/*`.
+Não há allowlist, bypass local, segredo partilhado ou transporte de service token.
 
-## Canonical Finance API
+As vistas gerais de candidatos, bundles, readiness, evidência, avaliação e
+experiências privadas são retiradas, incluindo BFF. Hoje só afeta dados de teste.
+O regresso depende do contrato de conta dona e submissão explícita do registry
+(ENG-197/ENG-203), fora deste corte. `/production` e o monitoring só mostram dados
+comprovadamente de produção.
 
-Ticker-scoped finance data is resource-oriented and shared with the frontoffice:
+`/research` seleciona um recurso por ID e motivo obrigatório. O backend exige
+permissão explícita e confirma auditoria durável antes de devolver conteúdo.
+Não há listas, lotes, seleção por utilizador, watchlists ou alertas. Artefactos
+concretos são transmitidos pelo BFF, sem URLs de armazenamento na resposta.
 
-- `GET /tickers/{ticker}/financial-statements`
-- `GET /tickers/{ticker}/market-metrics`
-- `GET /tickers/{ticker}/earnings-events` and `/latest`
-- `GET /tickers/{ticker}/corporate-actions`
-- `GET /tickers/{ticker}/filings`
-- `GET /tickers/{ticker}/investor-events`
-- `GET /tickers/{ticker}/guidance`
-- `GET /tickers/{ticker}/equity-capital-events`
-- `GET /tickers/{ticker}/fund-distributions`
-
-Backoffice Next routes translate their existing `?symbol=` UI contract into these
-canonical paths and authenticate upstream with `BACKEND_SERVICE_TOKEN`.
-Cross-universe operational inventories use `/admin/data-control/*`; the global
-rebalance explorer uses `/admin/fund-rebalances`. Deprecated `/analyst/*`
-ticker-detail aliases are not consumed by this repository.
-
-## Model Registry Views
-
-The `/registry` area is read-only and consumes `finance-backend` registry proxy routes. It does not call the registry service directly from the backoffice.
-
-Implemented views:
-
-- registry dashboard and candidate list
-- candidate detail and lineage
-- bundle detail
-- promotion history
-- active pointer dashboard
-- readiness report detail and latest candidate readiness
-
-Useful local check:
-
-```bash
-BACKEND_BASE_URL=http://localhost:8001 BACKEND_SERVICE_TOKEN=local-dev-token npm run dev
-```
-
-Then open `/registry` while `finance-backend` is running with its registry façade enabled. If the backend reports `registry_unavailable`, the UI renders a safe unavailable state instead of attempting any direct registry access.
-
-## Research Views
-
-The `/research` area is an admin UI for launching and observing orchestrated research experiments through these backend routes:
-
-- `POST /analyst/research/experiments`
-- `GET /analyst/research/experiments`
-- `GET /analyst/research/experiments/{experiment_id}`
-- `GET /analyst/research/experiments/{experiment_id}/events`
-- `GET /analyst/research/experiments/{experiment_id}/artifacts`
-
-The browser never receives `BACKEND_SERVICE_TOKEN` directly. All research requests go through Next server route handlers in this repo.
-When configured, those server-side research proxy handlers also attach `CF-Access-Client-Id` and `CF-Access-Client-Secret` for Cloudflare Access. If the Cloudflare vars are unset, the same research proxies still work for local development against an unprotected localhost backend.
-
-## Data View
-
-The `/data` page is an inventory-first operational view backed by these `finance-backend` routes:
-
-- `GET /analyst/data-ops/inventory`
-- `GET /analyst/data-ops/coverage`
-
-It does not fall back to the legacy `/analyst/data-ops/health` contract. If the new contract is unavailable, the page renders a visible `Data Ops contract unavailable` state with the endpoint and status instead of showing guessed coverage.
+Com `PLATFORM_API_ENABLED=false`, a consola fica indisponível, sem fallback.
+Nenhuma configuração, credencial, MFA ou grant de produção é alterada. O token
+legado continua nas previews Vercel (ENG-186), mas o backend só o aceita no health
+check temporário do mapa (ENG-228), sem poderes administrativos.
 
 ## Development
 
@@ -117,22 +57,11 @@ many operations are frontoffice-only or worker-only.
 FINANCE_BACKEND_CONTRACT_PATH=/path/to/finance-backend/docs/api-contract.json npm run test:backend-contract
 ```
 
-### Local Clerk bypass
+### Local authentication
 
-For local debugging with automation tools, Clerk can be bypassed by starting the dev server with:
-
-```bash
-ADMIN_AUTH_BYPASS=true npm run dev
-```
-
-This bypass is intentionally local-only. The code checks both conditions before skipping Clerk:
-
-- `ADMIN_AUTH_BYPASS=true`
-- `NODE_ENV !== 'production'`
-
-That means a normal Vercel production deployment still requires Clerk even if `ADMIN_AUTH_BYPASS` is accidentally present in the environment. Do not add `ADMIN_AUTH_BYPASS` to Vercel production environment variables.
-
-For agent/browser troubleshooting, see `AGENTS.md`. It documents the `ADMIN_AUTH_BYPASS=true npm run dev` flow, `agent-browser` install notes, screenshot/snapshot commands, error-overlay checks, and backend connectivity checks.
+Use Clerk Development sessions against the isolated synthetic platform profile.
+Every request requires the user's session and a current explicit backend grant,
+including local development. `npm run dev:platform` validates matching inputs.
 
 ## Deployment
 
@@ -150,59 +79,35 @@ Recommended Vercel production environment variables:
 - `CLERK_SECRET_KEY`
 - `NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`
 - `NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up`
-- `ADMIN_EMAIL_ALLOWLIST`
 - `BACKEND_BASE_URL`
-- `BACKEND_SERVICE_TOKEN`
-- `CF_ACCESS_CLIENT_ID`
-- `CF_ACCESS_CLIENT_SECRET`
 
-Do not set `ADMIN_AUTH_BYPASS` in production. It is only for local `next dev`, and the app ignores it when `NODE_ENV=production`.
 
-## Backend administrative JWT migration
+## Backend administrative authentication
 
-`BACKOFFICE_AUTH_MODE=legacy` is the default during rollout. In that mode the
-existing email allowlist and server credentials retain their behavior. Set
-`BACKOFFICE_AUTH_MODE=clerk_jwt` only against a Backend containing migration
-`007_administrative_rbac`, with `PLATFORM_API_ENABLED=true` and
-`PLATFORM_ADMIN_ENABLED=true`.
+The backoffice always sends the user's default Clerk session JWT to canonical
+`/v1/admin/*` routes. There is no authentication mode flag, email allowlist,
+local bypass, shared secret or service-token transport. `/v1/admin/me` checks
+`backoffice.access` before rendering protected workspaces; each operation checks
+its exact internal backend permission again. Organization roles and commercial
+subscriptions do not grant global administration. Current revocation/suspension
+are enforced by the backend even with a valid JWT.
 
-In JWT mode Clerk provides session identity. `GET /v1/admin/me` verifies an
-explicit, current PostgreSQL administrative grant before the backoffice renders
-protected workspaces. Every Backend request uses the user's session JWT and the
-native `/v1/admin` alias, with exact operation RBAC enforced by FastAPI.
-Organization administrators do not receive platform administration. The email
-allowlist, Clerk metadata, local bypass, shared secret and service token do not
-grant native access. Unknown modes and unavailable authorization fail closed.
+With PLATFORM_API_ENABLED=false the administrative console is unavailable.
+The unavailable state has no privileged fallback. Activation is a separate
+operator step; this change does not activate or grant anything in production.
 
-Configuration names: `BACKOFFICE_AUTH_MODE`, `BACKEND_BASE_URL`,
-`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`. Use matching Clerk and
-Backend environments; the backoffice's exact origin must be authorized by the
-Backend's JWT configuration. Local example: `http://localhost:3101`, with the
-Backend at `http://127.0.0.1:18095`. Never expose the Clerk secret key to the browser.
-The `finance-infra/platform-local` profile provisions the administrative migration;
-add the optional exact backoffice origin to its private input before starting it.
+Configuration: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY and
+BACKEND_BASE_URL. The exact origin must be authorized by the backend. Local
+origins remain http://localhost:3101 and http://127.0.0.1:18095. The controlled
+backend CLI manages explicit expiring grants and audit reasons. No actor is
+hardcoded and the Clerk Backend API is not called to authorize each request.
+The displayed actor is the internal ID returned by the authorized backend.
 
-Create/revoke administrative grants only through the controlled Backend tool
-documented in `finance-backend/docs/PLATFORM_ADMINISTRATIVE_RBAC.md`. No user HTTP
-endpoint grants global rights. Roles require explicit operation permissions,
-an audit reason, and expiry. No administrator identity is hardcoded here.
-
-JWT requests omit cookies and legacy credentials, disable redirects and caching,
-and retry a 401 once with a fresh default session token. Backend errors are
-sanitized; native responses never fall back to service authentication. The
-diagnostics health probe checks administrative identity in native mode.
-
-Do not change Cloudflare or deploy from this work. Existing Cloudflare Access
-policies must be reviewed by the operator before native traffic is enabled
-outside local development. Keep legacy credentials until local, staging and
-preview validation and rollback have been reviewed. Email display remains identity
-information; it is not an authorization decision.
-
-Tests now compile into repository-local ignored `.test-build/` rather than a
-fixed `/tmp` location. Unit tests cover JWT-only headers, one refresh, invalid
-modes, traversal rejection and mutation forwarding. Lint and production build
-have also been exercised locally. A real administrative login/grant/revoke
-proof remains required before cutover.
+Canonical examples: `/v1/admin/contracts`, `/v1/admin/data-control/coverage`,
+`/v1/admin/ops/prefect/overview`. No duplicated `/admin/admin` paths. Requests
+omit cookies, legacy headers and caching, reject redirects, and retry 401 once
+with a refreshed session. Upstream errors never return response-body previews.
+The operator reviews edge access separately before activation.
 
 ### Local native browser validation
 
@@ -210,7 +115,7 @@ Start the isolated stack from the sibling frontoffice with `npm run dev:platform
 Its private inputs must authorize `http://localhost:3101`. In this checkout run
 `npm run dev:platform` to open the backoffice at that exact loopback origin.
 The launcher uses the sibling frontoffice's Clerk Development keys, verifies they
-match the stack, and disables the legacy allowlist and bypass. It does not write
+match the stack, and requires session authentication. It does not write
 environment files or grant administrative access. Use the audited internal CLI
 for a temporary, least-privilege grant.
 
@@ -246,6 +151,19 @@ consulta por utilizador e a consulta de watchlists no painel inicial. O backoffi
 não recebe um substituto para enumerar recursos privados. O acesso por exceção a
 um recurso concreto será tratado no passo de administração, com motivo e auditoria.
 
-Este branch depende do PR #9. O corte funciona com /v1 desligado: estas vistas
+Os PRs #9/#10 estão integrados. O corte funciona com /v1 desligado: estas vistas
 mostram indisponibilidade e não recorrem ao service token para aceder aos dados
 pessoais. Não ativa a plataforma nem altera credenciais. O Francisco faz o merge.
+
+## Corte integral e produção
+
+Os BFFs só chamam `/v1` com JWT Clerk e RBAC atual, mais credenciais Access
+do servidor quando a origem as exige. Não há alias FINANCE_BACKEND_URL, allowlist
+ou service token. O mapa usa os contratos nativos com sessão; o painel mostra
+score/rank publicados em produção, sem converter score em direção. Proxies
+direcionais e leituras administrativas privadas gerais foram apagados. Candidatos
+e readiness ficam indisponíveis até existir owner/submissão no registry.
+
+O inventário de chamadas está em `finance-infra/docs/eng196/consumidores.csv`.
+O manifesto `finance-infra/docs/eng196/ATIVACAO.md` controla a promoção Production,
+a remoção final das variáveis e o rollback. Nenhuma execução no servidor neste PR.

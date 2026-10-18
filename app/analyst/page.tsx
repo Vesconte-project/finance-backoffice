@@ -1,7 +1,9 @@
+import Link from 'next/link'
 import { requireAdminUser } from '@/lib/admin-auth'
-import AnalystConsole from './ui'
 
 export default async function AnalystPage() {
-  const admin = await requireAdminUser()
-  return <AnalystConsole adminEmail={admin.email} />
+  await requireAdminUser()
+  return <section className="card"><h1>Analyst</h1>
+    <p>General job history and private results are unavailable.</p>
+    <Link href="/data">Open operational data tools</Link></section>
 }

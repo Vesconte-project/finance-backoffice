@@ -1,7 +1,20 @@
+import { createRequire } from 'node:module'
 import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 const repositoryRoot = resolve(import.meta.dirname, '..')
+// Compile the pure routing function used by the real BFF, so the inventory
+// cannot silently keep validating removed /v1/admin market aliases.
+const require=createRequire(import.meta.url)
+const ts=require('typescript')
+const routingSource=await readFile(resolve(repositoryRoot,'lib/native-admin-client.ts'),'utf8')
+const routingTree=ts.createSourceFile('routing.ts',routingSource,ts.ScriptTarget.Latest,true)
+const routing=routingTree.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text==='backendRoutePath')
+if (!routing) throw Error('Canonical backend routing function is missing')
+const compiled=ts.transpileModule(routing.getText(routingTree),{
+  compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText
+const {backendRoutePath}=await import('data:text/javascript;base64,'+Buffer.from(compiled).toString('base64'))
+
 const contractPath = process.env.FINANCE_BACKEND_CONTRACT_PATH
 
 if (!contractPath) {
@@ -45,6 +58,11 @@ if (missingTargets.length || unsupportedAudienceTargets.length) {
   throw new Error(messages.join('\n\n'))
 }
 
+if (process.env.ENG196_CONSUMERS_JSON) {
+  const {writeFile}=await import('node:fs/promises')
+  await writeFile(process.env.ENG196_CONSUMERS_JSON,JSON.stringify(proxyTargets,null,2)+'\n')
+}
+
 const declaredForBackoffice = contract.operations.filter((operation) => operation.consumers.includes('backoffice')).length
 console.log(`Validated ${proxyTargets.length} Backoffice proxy targets against contract ${contract.contract_version}.`)
 console.log(`${declaredForBackoffice} backend operations are intended for Backoffice; proxy coverage is intentionally not required to be exhaustive.`)
@@ -66,7 +84,7 @@ async function collectProxyTargets(directory) {
 }
 
 function extractProxyTargets(source, sourcePath) {
-  const calls = [...source.matchAll(/proxy(?:Research)?BackendJson\s*\(\s*\{/g)]
+  const calls = [...source.matchAll(/(?:proxyBackendJson|requestBackendResponse)\s*\(\s*\{/g)]
   const canonicalCalls = [...source.matchAll(/proxyCanonicalTickerResource\s*\(\s*\{[\s\S]*?resource:\s*'([^']+)'[\s\S]*?\}\s*\)/g)]
   const actionValues = [...source.matchAll(/type\s+ResearchAdminAction\s*=\s*([^\n]+)/g)]
     .flatMap((match) => [...match[1].matchAll(/'([^']+)'/g)].map((value) => value[1]))
@@ -75,7 +93,7 @@ function extractProxyTargets(source, sourcePath) {
   for (const match of canonicalCalls) {
     targets.push({
       method: 'GET',
-      path: `/tickers/{}/${match[1]}`,
+      path: backendRoutePath(`/tickers/{}/${match[1]}`),
       source: sourcePath.replace(`${repositoryRoot}/`, ''),
     })
   }
@@ -101,7 +119,7 @@ function extractProxyTargets(source, sourcePath) {
     for (const path of expandedPaths) {
       targets.push({
         method: methodMatch[1],
-        path: normalizePath(path),
+        path: normalizePath(backendRoutePath(path,methodMatch[1])),
         source: sourcePath.replace(`${repositoryRoot}/`, ''),
       })
     }

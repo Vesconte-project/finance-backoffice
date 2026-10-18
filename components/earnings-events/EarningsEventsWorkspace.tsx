@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { requestClientJson } from '@/lib/client-json'
 import { asRecord, firstList, type RowRecord } from '@/lib/payload'
 
-type Props = { adminEmail: string }
+type Props = { adminActor: string }
 type EarningsMode = 'pit' | 'latest'
 
 type EarningsRow = {
@@ -37,7 +37,7 @@ type EarningsResponse = {
   rows: EarningsRow[]
 }
 
-export function EarningsEventsWorkspace({ adminEmail }: Props) {
+export function EarningsEventsWorkspace({ adminActor }: Props) {
   const [symbol, setSymbol] = useState('AAPL')
   const [eventStatus, setEventStatus] = useState('')
   const [fiscalPeriod, setFiscalPeriod] = useState('')
@@ -106,7 +106,7 @@ export function EarningsEventsWorkspace({ adminEmail }: Props) {
             <h1>Earnings Events</h1>
             <p className="small">{mode === 'latest' ? 'Latest enriched is non-PIT and must not be used for strict backtests.' : 'Canonical temporal observations. Known at is the source-cache observation date, not the earnings report date.'}</p>
           </div>
-          <div className="small">Admin: {adminEmail}</div>
+          <div className="small">Admin: {adminActor}</div>
         </div>
 
         <div className="chart-tabs" role="tablist" aria-label="Earnings event read mode">

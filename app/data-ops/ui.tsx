@@ -218,7 +218,7 @@ function deriveGapIssues(health: HealthResponse | null): GapIssue[] {
   return issues.sort((a, b) => b.missingDays - a.missingDays)
 }
 
-export default function DataOpsConsole({ adminEmail, initialDomain }: { adminEmail: string; initialDomain?: string }) {
+export default function DataOpsConsole({ adminActor, initialDomain }: { adminActor: string; initialDomain?: string }) {
   const [jobs, setJobs] = useState<DataOpsJob[]>([])
   const [currentJob, setCurrentJob] = useState<DataOpsJob | null>(null)
   const [error, setError] = useState<unknown>(null)
@@ -457,7 +457,7 @@ export default function DataOpsConsole({ adminEmail, initialDomain }: { adminEma
             <h2>Data Quality</h2>
             <p className="small">Issue discovery comes first: coverage gaps, stale domains, and failed repair jobs. Rebuild and refill actions stay available, but only after the operator can see what is broken.</p>
           </div>
-          <div className="small">Admin: {adminEmail}</div>
+          <div className="small">Admin: {adminActor}</div>
         </div>
       </div>
 

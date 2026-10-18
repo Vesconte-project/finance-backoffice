@@ -3,5 +3,5 @@ import { requireAdminUser } from '@/lib/admin-auth'
 
 export default async function GuidancePage() {
   const admin = await requireAdminUser()
-  return <GuidanceWorkspace adminEmail={admin.email} />
+  return <GuidanceWorkspace adminActor={admin.userId} />
 }

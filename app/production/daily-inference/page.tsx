@@ -14,7 +14,7 @@ export default async function DailyInferencePage() {
           </div>
           <div className="meta">
             <Link href="/production" className="text-link">Production</Link>
-            <span className="small">Admin: {admin.email}</span>
+            <span className="small">Admin: {admin.userId}</span>
           </div>
         </div>
       </div>

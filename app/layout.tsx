@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { ClerkProvider, SignInButton, UserButton } from '@clerk/nextjs'
 import { auth } from '@clerk/nextjs/server'
 import { Sidebar } from '@/components/layout/Sidebar'
-import { isAdminAuthBypassEnabled } from '@/lib/admin-auth'
 import { grayHealth } from '@/lib/sidebar-state'
 import './globals.css'
 
@@ -12,8 +11,7 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const authBypassed = isAdminAuthBypassEnabled()
-  const { userId } = authBypassed ? { userId: 'local-admin-bypass' } : await auth()
+  const { userId } = await auth()
   const app = (
     <html lang="en">
       <body>
@@ -24,7 +22,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           />
           <div className="app-main">
             <div className="auth-row">
-              {authBypassed ? <span className="small">Local auth bypass</span> : userId ? <UserButton /> : <SignInButton />}
+              {userId ? <UserButton /> : <SignInButton />}
             </div>
             <main className="container main">{children}</main>
           </div>
@@ -33,5 +31,5 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     </html>
   )
 
-  return authBypassed ? app : <ClerkProvider>{app}</ClerkProvider>
+  return <ClerkProvider>{app}</ClerkProvider>
 }

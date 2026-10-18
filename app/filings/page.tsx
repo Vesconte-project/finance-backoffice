@@ -3,5 +3,5 @@ import { FilingsWorkspace } from '@/components/filings/FilingsWorkspace'
 
 export default async function FilingsPage() {
   const admin = await requireAdminUser()
-  return <FilingsWorkspace adminEmail={admin.email} />
+  return <FilingsWorkspace adminActor={admin.userId} />
 }

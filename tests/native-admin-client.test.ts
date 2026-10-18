@@ -1,37 +1,17 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { localAdminBypassEnabled, nativeAdminEnabled, nativeAdminRequest, NativeAdminError } from '../lib/native-admin-client'
+import { nativeAdminRequest, nativeAdminJson, NativeAdminError, backendRoutePath } from '../lib/native-admin-client'
 
 test('native administration sends only session identity to the native alias', async () => {
   let tokens = 0
-  await nativeAdminRequest({ baseUrl: 'http://127.0.0.1:18095', path: '/admin/contracts',
+  await nativeAdminRequest({ baseUrl: 'http://127.0.0.1:18095', path: '/contracts',
     getToken: async () => { tokens++; return 'session-fixture' }, fetcher: async (url, options) => {
-      assert.equal(String(url), 'http://127.0.0.1:18095/v1/admin/admin/contracts')
+      assert.equal(String(url), 'http://127.0.0.1:18095/v1/admin/contracts')
       assert.deepEqual(options?.headers, { Authorization: 'Bearer session-fixture' })
       assert.equal(options?.credentials, 'omit'); assert.equal(options?.cache, 'no-store'); assert.equal(options?.redirect, 'error')
       return new Response('{}')
     } })
   assert.equal(tokens, 1)
-})
-
-test('local bypass is limited to legacy development and cannot weaken native or unknown modes', () => {
-  const names = ['NODE_ENV', 'BACKOFFICE_AUTH_MODE', 'ADMIN_AUTH_BYPASS'] as const
-  const previous = Object.fromEntries(names.map(name => [name, process.env[name]]))
-  try {
-    Object.assign(process.env, { NODE_ENV: 'development', BACKOFFICE_AUTH_MODE: 'legacy', ADMIN_AUTH_BYPASS: 'true' })
-    assert.equal(localAdminBypassEnabled(), true)
-    process.env.BACKOFFICE_AUTH_MODE = 'clerk_jwt'
-    assert.equal(localAdminBypassEnabled(), false)
-    process.env.BACKOFFICE_AUTH_MODE = 'unknown'
-    assert.throws(localAdminBypassEnabled, NativeAdminError)
-    Object.assign(process.env, { NODE_ENV: 'production', BACKOFFICE_AUTH_MODE: 'legacy' })
-    assert.equal(localAdminBypassEnabled(), false)
-  } finally {
-    for (const name of names) {
-      if (previous[name] === undefined) Reflect.deleteProperty(process.env, name)
-      else Object.assign(process.env, { [name]: previous[name] })
-    }
-  }
 })
 
 test('401 refreshes exactly once and never falls back to a privileged credential', async () => {
@@ -45,16 +25,7 @@ test('401 refreshes exactly once and never falls back to a privileged credential
   assert.deepEqual(options, [undefined, { skipCache: true }])
 })
 
-test('unknown mode and nonlocal plaintext API fail closed', async () => {
-  const previous = process.env.BACKOFFICE_AUTH_MODE
-  try {
-    delete process.env.BACKOFFICE_AUTH_MODE; assert.equal(nativeAdminEnabled(), false)
-    process.env.BACKOFFICE_AUTH_MODE = 'clerk_jwt'; assert.equal(nativeAdminEnabled(), true)
-    process.env.BACKOFFICE_AUTH_MODE = 'mistyped'; assert.throws(nativeAdminEnabled, NativeAdminError)
-  } finally {
-    if (previous === undefined) delete process.env.BACKOFFICE_AUTH_MODE
-    else process.env.BACKOFFICE_AUTH_MODE = previous
-  }
+test('nonlocal plaintext API fails closed', async () => {
   await assert.rejects(nativeAdminRequest({ baseUrl: 'http://api.example.com', path: '/me', getToken: async () => 'fixture' }), NativeAdminError)
 })
 
@@ -66,7 +37,7 @@ test('path traversal, webhooks and synthetic user APIs cannot receive an adminis
 })
 
 test('mutation bodies and search parameters survive without service headers', async () => {
-  await nativeAdminRequest({ baseUrl: 'https://api.example.com', path: '/analyst/jobs', method: 'POST',
+  await nativeAdminRequest({ baseUrl: 'https://api.example.com', path: '/analyst/data-ops/rebuild-jobs', method: 'POST',
     body: { fixture: 'ACME' }, searchParams: new URLSearchParams({ limit: '1' }), getToken: async () => 'fixture',
     fetcher: async (url, options) => {
       assert.equal(new URL(String(url)).search, '?limit=1')
@@ -74,4 +45,75 @@ test('mutation bodies and search parameters survive without service headers', as
       assert.equal(options?.body, '{"fixture":"ACME"}')
       return new Response('{}')
     } })
+})
+
+test('missing session never makes a backend request even with legacy environment present', async () => {
+  const previous = process.env.BACKEND_SERVICE_TOKEN
+  process.env.BACKEND_SERVICE_TOKEN = 'synthetic-unused-service-token'
+  let requests = 0
+  try {
+    await assert.rejects(nativeAdminRequest({ baseUrl: 'https://api.example.com', path: '/me',
+      getToken: async () => null, fetcher: async () => { requests++; return new Response('{}') } }),
+      (error: unknown) => error instanceof NativeAdminError && error.status === 401)
+    assert.equal(requests, 0)
+  } finally {
+    if (previous === undefined) delete process.env.BACKEND_SERVICE_TOKEN
+    else process.env.BACKEND_SERVICE_TOKEN = previous
+  }
+})
+
+test('backend refusals and malformed JSON never expose an upstream body', async () => {
+  for (const status of [200, 401, 403, 429, 503]) {
+    await assert.rejects(nativeAdminJson({ baseUrl: 'https://api.example.com', path: '/me',
+      getToken: async () => 'synthetic-session', fetcher: async () =>
+        new Response('private-credential-never-echo', { status, headers: { 'Content-Type': 'application/json' } }) }),
+      (error: unknown) => error instanceof NativeAdminError && !error.message.includes('private-credential'))
+  }
+})
+
+test('rate refusals retain a bounded Retry-After without response details', async () => {
+  await assert.rejects(nativeAdminRequest({ baseUrl: 'https://api.example.com', path: '/me',
+    getToken: async () => 'synthetic-session', fetcher: async () => new Response('private', {
+      status: 429, headers: { 'Retry-After': '60' } }) }),
+    (error: unknown) => error instanceof NativeAdminError && error.status === 429 && error.retryAfter === '60')
+})
+
+test('Access transports a server request but never replaces a missing session', async () => {
+  const savedId=process.env.CF_ACCESS_CLIENT_ID, savedSecret=process.env.CF_ACCESS_CLIENT_SECRET
+  process.env.CF_ACCESS_CLIENT_ID='synthetic-access-id'
+  process.env.CF_ACCESS_CLIENT_SECRET='synthetic-access-secret'
+  let calls=0
+  try {
+    await nativeAdminRequest({ baseUrl:'https://backend.example.test', path:'/me', getToken:async ()=>'synthetic-session',
+      fetcher:async (_url, options) => {
+        calls++
+        const headers=new Headers(options?.headers)
+        assert.equal(headers.get('authorization'), 'Bearer synthetic-session')
+        assert.equal(headers.get('CF-Access-Client-Id'), 'synthetic-access-id')
+        assert.equal(headers.get('CF-Access-Client-Secret'), 'synthetic-access-secret')
+        assert.equal(headers.get('x-backend-shared-secret'), null)
+        return new Response('{}')
+      } })
+    await assert.rejects(nativeAdminRequest({ baseUrl:'https://backend.example.test',path:'/me',getToken:async ()=>null,
+      fetcher:async ()=>{ calls++;return new Response('{}') } }),
+      (error:unknown)=>error instanceof NativeAdminError && error.status===401)
+    assert.equal(calls,1)
+    delete process.env.CF_ACCESS_CLIENT_SECRET
+    await assert.rejects(nativeAdminRequest({ baseUrl:'https://backend.example.test',path:'/me',getToken:async ()=>'synthetic-session',
+      fetcher:async ()=>{ calls++;return new Response('{}') } }),
+      (error:unknown)=>error instanceof NativeAdminError && error.status===503)
+    assert.equal(calls,1)
+  } finally {
+    if(savedId===undefined) delete process.env.CF_ACCESS_CLIENT_ID; else process.env.CF_ACCESS_CLIENT_ID=savedId
+    if(savedSecret===undefined) delete process.env.CF_ACCESS_CLIENT_SECRET; else process.env.CF_ACCESS_CLIENT_SECRET=savedSecret
+  }
+})
+
+
+test('market reads use /v1 while administrative mutations and health use /v1/admin', () => {
+  for (const path of ['/tickers/SYNTH/profile','/tickers/SYNTH/ohlc','/signals/cross-sectional','/network/atlas','/relationships/SYNTH'])
+    assert.equal(backendRoutePath(path), '/v1'+path)
+  for (const path of ['/tickers/status','/relationship-map/source-health','/analyst/data-ops/inventory'])
+    assert.equal(backendRoutePath(path), '/v1/admin'+path)
+  assert.equal(backendRoutePath('/tickers/request','POST'),'/v1/admin/tickers/request')
 })

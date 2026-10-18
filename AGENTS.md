@@ -44,17 +44,17 @@ Linear parent/child relations may help discover the continuation but never prove
 Acceptance covers this work. This repository contains no Company OS admission runtime
 or Authority credential.
 
-This project is a Clerk-protected Next.js backoffice. For local debugging, agents may bypass Clerk only in development.
+This project is a Clerk-protected Next.js backoffice. Local debugging requires Clerk Development sessions and backend administrative grants.
 
 ## Local Browser Debugging
 
-Start the dev server with the local auth bypass:
+Start the isolated synthetic development profile with matching Clerk inputs:
 
 ```bash
-ADMIN_AUTH_BYPASS=true npm run dev
+npm run dev:platform
 ```
 
-The bypass is ignored when `NODE_ENV=production`, so production still requires Clerk.
+There is no local or production authentication bypass.
 
 Use the local URL printed by Next.js. It is usually:
 
@@ -113,44 +113,24 @@ agent-browser close
 
 ## Backend Connectivity Checks
 
-The backend is reached server-side from Next.js. For Cloudflare Access protected backends, `.env.local` must include:
-
-```env
-CF_ACCESS_CLIENT_ID=
-CF_ACCESS_CLIENT_SECRET=
-BACKEND_SERVICE_TOKEN=
-BACKEND_BASE_URL=
-```
-
-Do not commit `.env.local`.
-
-Quick backend health check from a loaded local env:
-
-```bash
-set -a
-. ./.env.local
-set +a
-
-curl -i "$BACKEND_BASE_URL/health" \
-  -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
-  -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"
-```
-
-Expected result is `HTTP/2 200` with `{"status":"ok"}` or equivalent JSON.
+Use `BACKEND_BASE_URL` e uma sessão Clerk Development com grant administrativo
+explícito. Não há service token, allowlist, segredo partilhado ou bypass local.
+Nunca colocar credenciais em argv ou ficheiros versionados. Verificar operações
+canónicas `/v1/admin/*` apenas no perfil local sintético.
 
 ## Data Ops Contract
 
 The `/data` page uses the new backend contract only:
 
-- `GET /analyst/data-ops/inventory`
-- `GET /analyst/data-ops/coverage`
+- `GET /v1/admin/analyst/data-ops/inventory`
+- `GET /v1/admin/analyst/data-ops/coverage`
 
-There is intentionally no fallback to `/analyst/data-ops/health`. If either new endpoint is missing, returns non-JSON, or returns an upstream error, the UI must show `Data Ops contract unavailable` instead of fabricated coverage.
+There is intentionally no fallback to `/v1/admin/analyst/data-ops/health`. If either new endpoint is missing, returns non-JSON, or returns an upstream error, the UI must show `Data Ops contract unavailable` instead of fabricated coverage.
 
 When the live backend has not deployed these routes yet, verify the page with a temporary local mock backend that implements only the new endpoints, then start Next.js against it:
 
 ```bash
-ADMIN_AUTH_BYPASS=true BACKEND_BASE_URL=http://localhost:8787 BACKEND_SERVICE_TOKEN=local-dev-token npm run dev
+npm run dev:platform
 ```
 
 Do not commit mock fallback behavior into the app.

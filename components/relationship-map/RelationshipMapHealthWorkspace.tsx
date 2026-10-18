@@ -8,7 +8,7 @@ import { RelationshipMapCoveragePanel } from '@/components/relationship-map/Rela
 import { RelationshipMapFrontierPanel } from '@/components/relationship-map/RelationshipMapFrontierPanel'
 
 type Props = {
-  adminEmail: string
+  adminActor: string
 }
 
 type WorkspaceTab = 'source-health' | 'coverage' | 'frontier'
@@ -50,7 +50,7 @@ type Rollup = {
   edgeSummary: string
 }
 
-export function RelationshipMapHealthWorkspace({ adminEmail }: Props) {
+export function RelationshipMapHealthWorkspace({ adminActor }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const activeTab = normalizeTab(searchParams.get('tab'))
@@ -108,7 +108,7 @@ export function RelationshipMapHealthWorkspace({ adminEmail }: Props) {
             <h1>Relationship map</h1>
             <p className="small">Source health, current universe coverage, and growth frontier for relationship edges.</p>
           </div>
-          <div className="small">Admin: {adminEmail}</div>
+          <div className="small">Admin: {adminActor}</div>
         </div>
       </div>
 

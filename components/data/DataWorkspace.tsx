@@ -80,7 +80,7 @@ type CoverageResponse = {
 }
 
 type Props = {
-  adminEmail: string
+  adminActor: string
   initialDomain?: string
   initialEntity?: string
   initialMonth: string
@@ -102,7 +102,7 @@ const STATUS_OPTIONS = [
   { value: 'ok', label: 'Healthy' },
 ]
 
-export default function DataWorkspace({ adminEmail, initialDomain, initialEntity, initialMonth }: Props) {
+export default function DataWorkspace({ adminActor, initialDomain, initialEntity, initialMonth }: Props) {
   const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [unsupported, setUnsupported] = useState<Array<{ domain: string; reason: string }>>([])
   const [inventoryLoading, setInventoryLoading] = useState(true)
@@ -212,7 +212,7 @@ export default function DataWorkspace({ adminEmail, initialDomain, initialEntity
             <h1>Data</h1>
             <p className="small">Inventory-first view of available datasets, entity date ranges, strict month coverage, and contextual repairs.</p>
           </div>
-          <div className="small">Admin: {adminEmail}</div>
+          <div className="small">Admin: {adminActor}</div>
         </div>
       </div>
 

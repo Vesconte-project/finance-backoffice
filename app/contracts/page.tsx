@@ -20,7 +20,6 @@ const MISSING_CONTRACTS = [
 ]
 
 const SIGNAL_EVALUATION_REQUIRED_CONTRACTS = [
-  ['candidate/model universe list', 'available', 'backend', '/evaluation', 'Signal Evaluation V1 exposes /analyst/signal-evaluation/candidates with source, ticker, strategy, universe, status, limit, offset, and include_official filters.'],
   ['normalized comparison summary', 'available', 'backend', '/evaluation', 'Signal Evaluation V1 normalizes candidate summaries, metrics, sources metadata, links, and structured gaps.'],
   ['selected candidate report', 'available', 'backend', '/evaluation', 'Signal Evaluation V1 report endpoint returns metrics, robustness, lineage, readiness, artifacts, raw evidence, series containers, and gaps.'],
   ['IC series', 'V1 gap-backed', 'backend / research orchestrator', '/evaluation', 'V1 returns series containers and backend gaps; it does not compute/populate IC points.'],
@@ -55,7 +54,7 @@ export default async function ContractsPage() {
           </p>
         </div>
         <div className="hero-actions">
-          <div className="small">Admin: {admin.email}</div>
+          <div className="small">Admin: {admin.userId}</div>
           <Link className="hero-link" href="/diagnostics">Open Diagnostics</Link>
         </div>
       </div>

@@ -11,12 +11,12 @@ test('accepts a complete backend contract manifest', () => {
     operations: [
       {
         method: 'GET',
-        path: '/admin/contracts',
+        path: '/v1/admin/contracts',
         operation_id: 'get_api_contract_admin_contracts_get',
         summary: 'get api contract',
         audience: 'backoffice',
-        auth: 'service-token',
-        auth_notes: 'Authorization bearer token must match BACKEND_SERVICE_TOKEN.',
+        auth: 'clerk-session-jwt',
+        auth_notes: 'Current session JWT and exact internal administrative permission required.',
         owner: 'backend',
         status: 'stable',
         consumers: ['backoffice'],
@@ -25,7 +25,7 @@ test('accepts a complete backend contract manifest', () => {
   })
 
   assert.equal(contract.operation_count, 1)
-  assert.equal(contract.operations[0].path, '/admin/contracts')
+  assert.equal(contract.operations[0].path, '/v1/admin/contracts')
 })
 
 test('rejects an incomplete backend contract manifest', () => {

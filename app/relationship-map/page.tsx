@@ -4,5 +4,5 @@ import { requireAdminUser } from '@/lib/admin-auth'
 export default async function RelationshipMapPage() {
   const admin = await requireAdminUser()
 
-  return <RelationshipMapHealthWorkspace adminEmail={admin.email} />
+  return <RelationshipMapHealthWorkspace adminActor={admin.userId} />
 }

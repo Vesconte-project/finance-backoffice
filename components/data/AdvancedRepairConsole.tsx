@@ -4,11 +4,11 @@ import { useState } from 'react'
 import DataOpsConsole from '@/app/data-ops/ui'
 
 type Props = {
-  adminEmail: string
+  adminActor: string
   initialDomain?: string
 }
 
-export default function AdvancedRepairConsole({ adminEmail, initialDomain }: Props) {
+export default function AdvancedRepairConsole({ adminActor, initialDomain }: Props) {
   const [open, setOpen] = useState(Boolean(initialDomain))
 
   return (
@@ -20,7 +20,7 @@ export default function AdvancedRepairConsole({ adminEmail, initialDomain }: Pro
       <summary style={{ cursor: 'pointer', fontWeight: 700 }}>Advanced repair console</summary>
       {open ? (
         <div style={{ marginTop: 16 }}>
-          <DataOpsConsole adminEmail={adminEmail} initialDomain={initialDomain} />
+          <DataOpsConsole adminActor={adminActor} initialDomain={initialDomain} />
         </div>
       ) : null}
     </details>

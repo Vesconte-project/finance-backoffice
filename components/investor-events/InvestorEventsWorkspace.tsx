@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { requestClientJson } from '@/lib/client-json'
 import { asRecord, firstList, type RowRecord } from '@/lib/payload'
 
-type Props = { adminEmail: string }
+type Props = { adminActor: string }
 
 type InvestorEventRow = {
   eventId: string
@@ -41,7 +41,7 @@ type InvestorEventsResponse = {
   rows: InvestorEventRow[]
 }
 
-export function InvestorEventsWorkspace({ adminEmail }: Props) {
+export function InvestorEventsWorkspace({ adminActor }: Props) {
   const [symbol, setSymbol] = useState('AAPL')
   const [eventType, setEventType] = useState('')
   const [asOf, setAsOf] = useState('')
@@ -105,7 +105,7 @@ export function InvestorEventsWorkspace({ adminEmail }: Props) {
             <h1>Investor Events</h1>
             <p className="small">Temporal PIT canonical candidates. Known at is the observation date, not confirmation of an event.</p>
           </div>
-          <div className="small">Admin: {adminEmail}</div>
+          <div className="small">Admin: {adminActor}</div>
         </div>
 
         <form className="entity-layer-query" onSubmit={submit}>

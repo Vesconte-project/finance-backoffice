@@ -1,9 +1,9 @@
-export default function FrontofficeWorkspace({ adminEmail }: { adminEmail: string }) {
+export default function FrontofficeWorkspace({ adminActor }: { adminActor: string }) {
   return (
     <div className="page-stack">
       <div className="card">
         <h1>Frontoffice</h1>
-        <p className="small">Admin: {adminEmail}</p>
+        <p className="small">Admin: {adminActor}</p>
       </div>
       <div className="card">
         <h2>Private user activity</h2>

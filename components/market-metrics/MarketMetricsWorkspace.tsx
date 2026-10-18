@@ -5,7 +5,7 @@ import { requestClientJson } from '@/lib/client-json'
 import { asRecord, firstList, type RowRecord } from '@/lib/payload'
 
 type Props = {
-  adminEmail: string
+  adminActor: string
 }
 
 type MarketMetricRow = {
@@ -28,7 +28,7 @@ type MarketMetricsResponse = {
   rows: MarketMetricRow[]
 }
 
-export function MarketMetricsWorkspace({ adminEmail }: Props) {
+export function MarketMetricsWorkspace({ adminActor }: Props) {
   const [symbol, setSymbol] = useState('AAPL')
   const [metric, setMetric] = useState('')
   const [latestOnly, setLatestOnly] = useState(false)
@@ -81,7 +81,7 @@ export function MarketMetricsWorkspace({ adminEmail }: Props) {
             <h1>Market Metrics</h1>
             <p className="small">Canonical temporal observations. Known at is the source-cache observation date, not an official filing date.</p>
           </div>
-          <div className="small">Admin: {adminEmail}</div>
+          <div className="small">Admin: {adminActor}</div>
         </div>
 
         <form className="entity-layer-query" onSubmit={submit}>

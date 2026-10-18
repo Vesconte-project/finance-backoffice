@@ -97,7 +97,7 @@ describe('Entity Layer Proxy Routes', () => {
   })
 
   it('proxies data control coverage and source health through admin-only read routes', () => {
-    for (const [route, backendPath] of [['coverage', '/admin/data-control/coverage'], ['calendar', '/admin/data-control/calendar'], ['disclosures', '/admin/data-control/disclosures'], ['domains', '/admin/data-control/domains'], ['sources', '/admin/data-control/sources']]) {
+    for (const [route, backendPath] of [['coverage', '/data-control/coverage'], ['calendar', '/data-control/calendar'], ['disclosures', '/data-control/disclosures'], ['domains', '/data-control/domains'], ['sources', '/data-control/sources']]) {
       const source = readFileSync(join(process.cwd(), 'app/api/data-control', route, 'route.ts'), 'utf8')
       assert.match(source, /export async function GET/)
       assert.match(source, /withAdminRoute/)
@@ -122,7 +122,7 @@ describe('Entity Layer Proxy Routes', () => {
     assert.match(distributions, /resource: 'fund-distributions'/)
     const rebalances = readFileSync(join(process.cwd(), 'app/api/fund-rebalances/route.ts'), 'utf8')
     assert.match(rebalances, /proxyBackendJson/)
-    assert.match(rebalances, /path: '\/admin\/fund-rebalances'/)
+    assert.match(rebalances, /path: '\/fund-rebalances'/)
     assert.doesNotMatch(distributions + rebalances, /export async function (POST|PUT|PATCH|DELETE)/)
   })
 

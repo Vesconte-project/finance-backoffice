@@ -5,7 +5,7 @@ import { requestClientJson } from '@/lib/client-json'
 import { asRecord, firstList, type RowRecord } from '@/lib/payload'
 
 type Props = {
-  adminEmail: string
+  adminActor: string
 }
 
 type EndpointKey = 'summary' | 'dedup' | 'tail' | 'sourceHealth' | 'review'
@@ -43,7 +43,7 @@ const sourceLabels = [
   'GLEIF LEI->ISIN',
 ]
 
-export function EntityLayerWorkspace({ adminEmail }: Props) {
+export function EntityLayerWorkspace({ adminActor }: Props) {
   const [state, setState] = useState<WorkspaceState>({
     summary: null,
     dedup: null,
@@ -146,7 +146,7 @@ export function EntityLayerWorkspace({ adminEmail }: Props) {
             </p>
           </div>
           <div className="entity-layer-header-meta">
-            <div className="small">Admin: {adminEmail}</div>
+            <div className="small">Admin: {adminActor}</div>
             <button className="secondary entity-layer-refresh" onClick={() => void loadWorkspace()} type="button">Refresh</button>
           </div>
         </div>

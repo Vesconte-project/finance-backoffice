@@ -1,84 +1,25 @@
-import Link from 'next/link'
 import { requireAdminUser } from '@/lib/admin-auth'
-import { listActivePointers, listPromotionEvents } from '@/lib/registry-backend'
-import { ActivePointerTable, PromotionEventList, RegistryErrorState } from '@/app/registry/components'
-import { EvidenceGap } from '@/app/components/workspace-data'
-import CrossSectionalSignalsWorkspace from '@/app/signals/cross-sectional/ui'
-import RegistryMonitoringWorkspace from '@/app/registry/monitoring/ui'
+import { requestBackendJson } from '@/lib/backend-client'
 
 export default async function ProductionPage() {
-  const admin = await requireAdminUser()
-  let activePointers: Awaited<ReturnType<typeof listActivePointers>> = []
-  let promotionEvents: Awaited<ReturnType<typeof listPromotionEvents>> = []
-  let error: unknown = null
-
+  await requireAdminUser()
+  let pointers: Record<string, unknown>[] = []
+  let available = false
   try {
-    const [pointers, events] = await Promise.all([
-      listActivePointers(),
-      listPromotionEvents(undefined, 50),
-    ])
-    activePointers = pointers
-    promotionEvents = events
-  } catch (requestError) {
-    error = requestError
-  }
-
-  return (
-    <div className="page-stack">
-      <div className="card">
-        <div className="split-row">
-          <div>
-            <h1>Production</h1>
-            <p className="small">Active model pointers, promotion history, daily inference, live ranked panels, and monitoring.</p>
-          </div>
-          <div className="meta">
-            <Link className="text-link" href="#active-models">Active models</Link>
-            <Link className="text-link" href="#live-panel">Live panel</Link>
-            <Link className="text-link" href="#monitoring">Monitoring</Link>
-            <Link className="text-link" href="/production/daily-inference">Daily inference</Link>
-            <span className="small">Admin: {admin.email}</span>
-          </div>
-        </div>
-      </div>
-
-      {error ? <RegistryErrorState error={error} /> : null}
-
-      <div className="card" id="active-models">
-        <h2>Active models</h2>
-        {activePointers.length > 0 ? (
-          <ActivePointerTable pointers={activePointers} />
-        ) : (
-          <EvidenceGap
-            reason="No active pointers were returned by the registry contract."
-            expected="Rows from /analyst/registry/active-pointers once a model has been activated."
-            title="No active model pointer"
-          />
-        )}
-      </div>
-
-      <div className="card" id="promotion-history">
-        <h2>Promotion history</h2>
-        {promotionEvents.length > 0 ? (
-          <PromotionEventList events={promotionEvents} />
-        ) : (
-          <EvidenceGap
-            reason="No promotion events were returned by the registry contract."
-            expected="Rows from /analyst/registry/promotion-events after candidate decisions are recorded."
-            title="Promotion history unavailable"
-          />
-        )}
-      </div>
-
-      <div className="card" id="live-panel">
-        <h2>Live panel</h2>
-        <p className="small">Ranked cross-sectional panel for the active production pointer.</p>
-        <CrossSectionalSignalsWorkspace />
-      </div>
-
-      <div className="card" id="monitoring">
-        <h2>Monitoring</h2>
-        <RegistryMonitoringWorkspace adminEmail={admin.email} />
-      </div>
-    </div>
-  )
+    const { payload } = await requestBackendJson({ path: '/analyst/registry/active-pointers',
+      searchParams: new URLSearchParams({ environment: 'production' }) })
+    const rows = payload && typeof payload === 'object' && 'active_pointers' in payload ? payload.active_pointers : null
+    if (Array.isArray(rows) && rows.every(row => row && typeof row === 'object' && row.environment === 'production')) {
+      pointers = rows; available = true
+    }
+  } catch { available = false }
+  return <section className="card">
+    <h1>Production</h1>
+    {!available ? <p>Production data is unavailable.</p> : pointers.length === 0 ? <p>No production pointers.</p> :
+      <table><thead><tr><th>Strategy</th><th>Universe</th><th>Active model</th></tr></thead>
+        <tbody>{pointers.map((row, index) => <tr key={String(row.active_pointer_id ?? index)}>
+          <td>{String(row.strategy_family ?? '')}</td><td>{String(row.universe ?? '')}</td>
+          <td>{String(row.active_candidate_id ?? row.candidate_id ?? '')}</td></tr>)}</tbody></table>}
+    <p>Candidate and readiness views are unavailable until the registry records ownership and explicit submission.</p>
+  </section>
 }

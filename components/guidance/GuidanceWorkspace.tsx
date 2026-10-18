@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { requestClientJson } from '@/lib/client-json'
 import { asRecord, firstList, type RowRecord } from '@/lib/payload'
 
-type Props = { adminEmail: string }
+type Props = { adminActor: string }
 
 type GuidanceRow = {
   eventId: string
@@ -50,7 +50,7 @@ type GuidanceResponse = {
   rows: GuidanceRow[]
 }
 
-export function GuidanceWorkspace({ adminEmail }: Props) {
+export function GuidanceWorkspace({ adminActor }: Props) {
   const [symbol, setSymbol] = useState('ASML')
   const [guidanceType, setGuidanceType] = useState('')
   const [sourceDocumentType, setSourceDocumentType] = useState('')
@@ -117,7 +117,7 @@ export function GuidanceWorkspace({ adminEmail }: Props) {
             <h1>Guidance</h1>
             <p className="small">Temporal PIT canonical guidance candidates. Known at is the observation date, not confirmation of published company guidance.</p>
           </div>
-          <div className="small">Admin: {adminEmail}</div>
+          <div className="small">Admin: {adminActor}</div>
         </div>
 
         <form className="entity-layer-query" onSubmit={submit}>

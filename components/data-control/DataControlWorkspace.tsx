@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { requestClientJson } from '@/lib/client-json'
 import { asRecord, firstList, type RowRecord } from '@/lib/payload'
 
-type Props = { adminEmail: string }
+type Props = { adminActor: string }
 type Tab = 'coverage' | 'calendar' | 'disclosures' | 'domains' | 'sources'
 type DomainSnapshot = { state: string; coverageClass: string; recordCount: number; latestKnownAt: string | null; sources: string[] }
 type CoverageRow = { symbol: string; readinessState: string | null; coreStatus: string; missingCoreDomains: string[]; unavailableCoreDomains: string[]; observedDomains: number; domains: Record<string, DomainSnapshot> }
@@ -20,7 +20,7 @@ const DOMAINS = [
   ['filings', 'Filings'], ['corporateActions', 'Actions'], ['investorEvents', 'Investor events'], ['guidance', 'Guidance'], ['equityCapitalEvents', 'Capital events'], ['fundDistributions', 'Fund distributions'],
 ] as const
 
-export function DataControlWorkspace({ adminEmail }: Props) {
+export function DataControlWorkspace({ adminActor }: Props) {
   const [tab, setTab] = useState<Tab>('coverage')
   const [search, setSearch] = useState('')
   const [offset, setOffset] = useState(0)
@@ -126,7 +126,7 @@ export function DataControlWorkspace({ adminEmail }: Props) {
             <h1>Data Control</h1>
             <p className="small">Coverage, operational events, disclosures, pipelines, and source lineage for canonical read models.</p>
           </div>
-          <div className="small">Admin: {adminEmail}</div>
+          <div className="small">Admin: {adminActor}</div>
         </div>
         <div className="entity-layer-query-action">
           <button className={tab === 'coverage' ? 'primary' : 'secondary'} onClick={() => switchTab('coverage')} type="button">Coverage</button>

@@ -12,8 +12,11 @@ const repos = resolve(root, process.env.FINANCE_REPOS_DIR || '..')
 // Load Development identity from the same frontend checkout, without writing
 // or replacing this backoffice's environment files.
 loadEnvConfig(resolve(repos, 'finance-frontoffice'), true)
-const inputs = JSON.parse(readFileSync(process.env.FINANCE_PLATFORM_INPUTS ||
-  resolve(repos, 'finance-infra/platform-local/.state/dev-input.json'), 'utf8'))
+const profile=process.env.FINANCE_LOCAL_PROFILE || 'platform-local'
+if (!['dev-local','platform-local'].includes(profile)) throw Error('Unknown local profile')
+const inputPath=profile==='dev-local' ? resolve(repos,'finance-infra/dev-local/.state/secrets/clerk') :
+  (process.env.FINANCE_PLATFORM_INPUTS || resolve(repos,'finance-infra/platform-local/.state/dev-input.json'))
+const inputs=JSON.parse(readFileSync(inputPath,'utf8'))
 const publishable = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || ''
 const secret = process.env.CLERK_SECRET_KEY || ''
 const issuer = `https://${Buffer.from(publishable.slice(8), 'base64').toString().replace(/\$$/, '')}`
@@ -23,10 +26,8 @@ if (!publishable.startsWith('pk_test_') || !secret.startsWith('sk_test_') ||
   throw Error('Use matching Clerk Development inputs with the exact localhost:3101 origin')
 const port = process.env.FINANCE_BACKEND_PORT || '18095'
 if (!/^\d{4,5}$/.test(port) || Number(port) > 65535) throw Error('Invalid local Backend port')
-const env = { ...process.env, NODE_ENV: 'development', BACKOFFICE_AUTH_MODE: 'clerk_jwt',
-  ADMIN_AUTH_BYPASS: 'false', ADMIN_EMAIL_ALLOWLIST: '', BACKEND_SERVICE_TOKEN: '',
-  BACKEND_SHARED_SECRET: '', CF_ACCESS_CLIENT_ID: '', CF_ACCESS_CLIENT_SECRET: '',
-  BACKEND_BASE_URL: `http://127.0.0.1:${port}`, FINANCE_BACKEND_URL: '',
+const env = { ...process.env, NODE_ENV: 'development',
+  BACKEND_BASE_URL: `http://127.0.0.1:${port}`,
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: publishable, CLERK_SECRET_KEY: secret,
   NEXT_PUBLIC_CLERK_SIGN_IN_URL: '/sign-in', NEXT_PUBLIC_CLERK_SIGN_UP_URL: '/sign-up',
   NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: '/', NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: '/',

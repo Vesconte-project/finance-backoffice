@@ -1,7 +1,7 @@
 import { BackendProxyError, requestBackendJson } from './backend-client'
 import { asRecord } from './payload'
 
-export const PREFECT_OVERVIEW_PATH = '/admin/ops/prefect/overview'
+export const PREFECT_OVERVIEW_PATH = '/ops/prefect/overview'
 export const PREFECT_FALLBACK_UI_URL = 'https://prefect.vesconte.com'
 
 export type PrefectWorkPool = {
@@ -55,11 +55,10 @@ export type PrefectOverview = {
   recentFailures: PrefectRecentFailure[]
 }
 
-export async function loadPrefectOverview(): Promise<PrefectOverview> {
-  const { payload, upstream } = await requestBackendJson({
+export async function loadPrefectOverview(requester: typeof requestBackendJson = requestBackendJson): Promise<PrefectOverview> {
+  const { payload, upstream } = await requester({
     path: PREFECT_OVERVIEW_PATH,
-    requireBackendServiceToken: true,
-    includeCloudflareAccess: true,
+
   })
   if (!upstream.ok) {
     throw new BackendProxyError(

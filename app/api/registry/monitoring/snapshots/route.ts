@@ -1,12 +1,6 @@
-import { NextRequest } from 'next/server'
-import { proxyResearchBackendJson, withAdminRoute } from '@/lib/backend-client'
+import { proxyBackendJson, withAdminRoute } from '@/lib/backend-client'
 
-export async function GET(request: NextRequest) {
-  return withAdminRoute(async () => {
-    return proxyResearchBackendJson({
-      path: '/analyst/registry/monitoring/snapshots',
-      method: 'GET',
-      searchParams: request.nextUrl.searchParams,
-    })
-  })
+export async function GET() {
+  return withAdminRoute(() => proxyBackendJson({ path: '/analyst/registry/monitoring/snapshots', method: 'GET',
+    searchParams: new URLSearchParams({ environment: 'production', limit: '100' }) }))
 }

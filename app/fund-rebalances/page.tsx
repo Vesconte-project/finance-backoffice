@@ -3,5 +3,5 @@ import { requireAdminUser } from '@/lib/admin-auth'
 
 export default async function FundRebalancesPage() {
   const admin = await requireAdminUser()
-  return <FundRebalancesWorkspace adminEmail={admin.email} />
+  return <FundRebalancesWorkspace adminActor={admin.userId} />
 }

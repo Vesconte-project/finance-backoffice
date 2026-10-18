@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { requestClientJson } from '@/lib/client-json'
 import { asRecord, firstList, type RowRecord } from '@/lib/payload'
 
-type Props = { adminEmail: string }
+type Props = { adminActor: string }
 
 type FilingRow = {
   eventId: string
@@ -34,7 +34,7 @@ type FilingsResponse = {
   rows: FilingRow[]
 }
 
-export function FilingsWorkspace({ adminEmail }: Props) {
+export function FilingsWorkspace({ adminActor }: Props) {
   const [symbol, setSymbol] = useState('AAPL')
   const [formType, setFormType] = useState('')
   const [asOf, setAsOf] = useState('')
@@ -98,7 +98,7 @@ export function FilingsWorkspace({ adminEmail }: Props) {
             <h1>Filings</h1>
             <p className="small">Temporal PIT canonical filing metadata. Known at is the observation date.</p>
           </div>
-          <div className="small">Admin: {adminEmail}</div>
+          <div className="small">Admin: {adminActor}</div>
         </div>
 
         <form className="entity-layer-query" onSubmit={submit}>
