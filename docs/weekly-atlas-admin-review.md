@@ -10,6 +10,8 @@ Coverage compares the current registered universe with nodes of the latest publi
 
 Legacy response shapes are rejected by the weekly parsers. An unavailable backend contract displays an error, with no fallback to legacy tables or fields. Deploy with the matching backend contract. Francisco reviews this backoffice branch before merging.
 
-## Validation state
+## Validation
 
-The Impeccable static detector reported no findings for the two changed components; `git diff --check` passed. The four parser tests, TypeScript validation, lint, build and visual review remain pending: Docker Desktop's WSL integration became unavailable after the credit interruption. Do not treat this branch as validated for merge. Tests executed for this backoffice change: 0.
+At exactly `0bf6fbd96b613f62066797491c8f59fda6c2b8f9`: **62 tests passed, 0 failed, 0 skipped**. Full TypeScript, lint and `npm run build` passed in clean Python 3.12, non-root, no network and private TMPDIR 0700. The backoffice source was copied without .env/local credentials; installed dependencies matched the lockfile for Next, React, Clerk, TypeScript and ESLint. A public synthetic Clerk domain was generated only inside the test container. The static UI detector had no findings. Francisco's visual/product review remains required before merge.
+
+[Recovery base, branch and SHA-256 of the five already committed files](eng-233-recovery-manifest.json). No backoffice archive extraction was needed; its uncommitted diff against 0bf6fbd was empty. The private recovery archives remain outside Git.
