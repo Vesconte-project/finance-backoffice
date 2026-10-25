@@ -9,3 +9,5 @@ The Frontier / Grow component and its proxy route are unchanged. Navigation reta
 At exactly 0bf6fbd: 62 tests passed, none failed or skipped; TypeScript, lint and npm run build passed in a clean python:3.12 container, non-root, no network and private TMPDIR 0700. Only existing locked dependencies and a generated public synthetic Clerk domain were used; no real credentials, data or production access. Recovery hashes/base are documented; the later commits add documentation only. Visual/product review remains Francisco's.
 
 Keep draft. The agent does not merge, push main or create tags.
+
+Merge gate: aguarda a reabertura do Vercel (ENG-196) e a primeira noite completa verificada, em coordenação com o backend. PR 3 só depois do PR 1; PR 4 só depois dos três em produção e de sete dias sem leituras. Estas condições de produção não foram verificadas pelo agente.
