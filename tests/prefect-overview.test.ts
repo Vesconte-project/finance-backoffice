@@ -117,7 +117,7 @@ test('prefect overview client rejects non-ok JSON response', async () => {
 })
 
 test('operations page does not expose mutable Prefect actions', () => {
-  const source = readFileSync('app/operations/ui.tsx', 'utf8').toLowerCase()
+  const source = readFileSync('app/(admin)/operations/ui.tsx', 'utf8').toLowerCase()
   assert.equal(source.includes('<button'), false, 'operations page should not render action buttons')
   for (const forbidden of ['run now', 'retry', 'resume', 'cancel run', 'edit schedule']) {
     assert.equal(source.includes(forbidden), false, `unexpected mutable action label: ${forbidden}`)

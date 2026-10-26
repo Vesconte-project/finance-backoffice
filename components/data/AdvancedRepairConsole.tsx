@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import DataOpsConsole from '@/app/data-ops/ui'
+import DataOpsConsole from '@/app/(admin)/data-ops/ui'
 
 type Props = {
   adminActor: string
