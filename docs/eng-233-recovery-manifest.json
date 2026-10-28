@@ -1,0 +1,40 @@
+{
+  "repository": "finance-backoffice",
+  "branch": "codex/eng-233-recover-backoffice-189d2a47",
+  "worktree": "worktrees/.managed/finance-backoffice-eng-233-recover-backoffice-189d2a47",
+  "base_commit": "0bf6fbd96b613f62066797491c8f59fda6c2b8f9",
+  "files": [
+    {
+      "path": "components/relationship-map/RelationshipMapCoveragePanel.tsx",
+      "sha256": "5cdda3124a0bd30e5258d91bf26611252024dcfdbe37decbccde38a19541a07c",
+      "status": "already-committed"
+    },
+    {
+      "path": "components/relationship-map/RelationshipMapHealthWorkspace.tsx",
+      "sha256": "79778c33b55b7915571bf2003bacf4712560388851f4ed565e3f505e489a3b68",
+      "status": "already-committed"
+    },
+    {
+      "path": "docs/weekly-atlas-admin-review.md",
+      "sha256": "cff5056adbae5fc0609619c1d15a12f027b3afed79c9dcd18c38b670ee6fab65",
+      "status": "already-committed"
+    },
+    {
+      "path": "lib/atlas-weekly-admin.ts",
+      "sha256": "35bd3a635c16b203770c1eb7b91b23e012b3e566c3244c76589fd37ae245cdbc",
+      "status": "already-committed"
+    },
+    {
+      "path": "tests/relationship-map-source-health-ui.test.ts",
+      "sha256": "077ebefc4d525489fa397e0de4b818742d606c5aa06b6a46f716bb7649e516c9",
+      "status": "already-committed"
+    }
+  ],
+  "uncommitted_diff": "empty",
+  "archive_extraction": false,
+  "secret_scan": {
+    "scanned_files": 5,
+    "findings": [],
+    "method": "same static credential/key patterns"
+  }
+}
