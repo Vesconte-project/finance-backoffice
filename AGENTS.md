@@ -156,8 +156,10 @@ production (ENG-248, package P0).
 - Do not wait for merges, approvals, reviews, installation or deployment windows.
   Leave no background command, watcher or sleep loop polling for them.
 - Wait for CI only while it may still require your own fixes, for at most two fix
-  rounds. If a third would be needed, hand off with the failing checks and your
-  diagnosis, and stop.
+  rounds. Wait with one blocking call that returns when the runs finish (on the
+  workspace station, `vesconte ci wait --pr <n>`), never with your own sleep or
+  polling loops. If a third round would be needed, hand off with the failing
+  checks and your diagnosis, and stop.
 - A merge does not mean installed. This repository deploys through the GitHub-connected
   Vercel project, not the self-host release engine. A merge to main is not
   verified until the Vercel production deployment for that commit succeeded.
